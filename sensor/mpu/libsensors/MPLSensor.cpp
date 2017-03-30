@@ -17,9 +17,6 @@
 #define LOG_NDEBUG 0
 //see also the EXTRA_VERBOSE define in the MPLSensor.h header file
 
-#define ENABLE_DEBUG_LOG
-#include <log/custom_log.h>
-
 #include <fcntl.h>
 #include <errno.h>
 #include <math.h>
@@ -110,14 +107,14 @@ MPLSensor* getCallbackObject() {
 NineAxisSensorFusion::NineAxisSensorFusion()
 {
     fp_enable_9x_fusion =  NULL;
-    fp_disable_9x_fusion = NULL; 
+    fp_disable_9x_fusion = NULL;
     enabled = -1;
 }
 
 NineAxisSensorFusion::~NineAxisSensorFusion()
 {
     fp_enable_9x_fusion =  NULL;
-    fp_disable_9x_fusion = NULL; 
+    fp_disable_9x_fusion = NULL;
     enabled = -1;
 }
 
@@ -137,7 +134,7 @@ inv_error_t NineAxisSensorFusion::enable()
 {
     inv_error_t result = INV_ERROR;
     /*
-    if (!(inv_get_dl_config()->inv_mpu_cfg->requested_sensors & 
+    if (!(inv_get_dl_config()->inv_mpu_cfg->requested_sensors &
             INV_THREE_AXIS_COMPASS)) {
         ALOGE("Warning : enable 9 axis sensor fusion aborted - "
              "compass is OFF in requested_sensors mask\n");
@@ -154,7 +151,7 @@ inv_error_t NineAxisSensorFusion::enable()
     }
     result = fp_enable_9x_fusion();
     if (result) {
-        ALOGE("Error while trying to enable 9 axis sensor fusion : %d\n", 
+        ALOGE("Error while trying to enable 9 axis sensor fusion : %d\n",
              result);
         enabled = false;
     } else {
@@ -171,7 +168,7 @@ inv_error_t NineAxisSensorFusion::disable()
 {
     inv_error_t result = INV_SUCCESS;
     /*
-    if (!(inv_get_dl_config()->inv_mpu_cfg->requested_sensors & 
+    if (!(inv_get_dl_config()->inv_mpu_cfg->requested_sensors &
             INV_THREE_AXIS_COMPASS)) {
         ALOGE("Warning : disable 9 axis sensor fusion aborted - "
              "compass is OFF in requested_sensors mask\n");
@@ -192,7 +189,7 @@ inv_error_t NineAxisSensorFusion::disable()
     }
     result = fp_disable_9x_fusion();
     if (result)
-        ALOGE("Error while trying to disable 9 axis sensor fusion : %d\n", 
+        ALOGE("Error while trying to disable 9 axis sensor fusion : %d\n",
              result);
     else
         ALOGI("Disabled 9 axis sensor fusion\n");
@@ -203,11 +200,11 @@ inv_error_t NineAxisSensorFusion::disable()
 /*****************************************************************************
  * sensor class implementation
  */
-  
+
 
 MPLSensor::MPLSensor() : SensorBase(NULL, NULL),
                          mMpuAccuracy(0),
-                         mNewData(0), 
+                         mNewData(0),
                          mDmpStarted(false),
                          mMasterSensorMask(INV_ALL_SENSORS),
                          mLocalSensorMask(ALL_MPL_SENSORS_NP),
@@ -335,7 +332,7 @@ MPLSensor::MPLSensor() : SensorBase(NULL, NULL),
     if (inv_serial_start(port) != INV_SUCCESS) {
         ALOGE("Fatal Error : could not open MPL serial interface");
     }
-    
+
     inv_get_version(&ver_str);
     ALOGI("%s\n", (char *)ver_str);
 
@@ -349,10 +346,10 @@ MPLSensor::MPLSensor() : SensorBase(NULL, NULL),
     //rv = inv_dmp_start();
     //ALOGE_IF(rv != INV_SUCCESS, "Fatal error: could not start the DMP correctly. (code = %d)\n", rv);
     //dmp_started = true;
-    
+
     mTransformForPreRotation.set(getOrientationOfDisplaySawBySfClient(), 0, 0);
     mTransformForPreRotation.dump("transform_for_pre_rotation");
-    
+
     pthread_mutex_unlock(&mMplMutex);
 }
 
@@ -397,8 +394,8 @@ void MPLSensor::clearIrqData(bool* irq_set)
     }
 }
 
-bool MPLSensor::needDMPStop() 
-{ 
+bool MPLSensor::needDMPStop()
+{
     return mDmpStarted;
 }
 
@@ -461,18 +458,18 @@ void MPLSensor::setPowerStates(int enabled_sensors)
     {
         ALOGE("MPU is not available");
         return;
-    }	
-	
+    }
+
     ALOGV("enabled_sensors: %d dmp_started: %d", enabled_sensors, mDmpStarted);
 
-    /* NOTE : 
+    /* NOTE :
        this method changes the mLocalSensorMask that is used just after */
     computeLocalSensorMask(enabled_sensors);
     /* record the new sensor state */
     sen_mask = mLocalSensorMask & mMasterSensorMask;
 
     changing_sensors = (
-        (inv_get_dl_config()->inv_mpu_cfg->requested_sensors != sen_mask) 
+        (inv_get_dl_config()->inv_mpu_cfg->requested_sensors != sen_mask)
             && (sen_mask != 0));
     restart = (!mDmpStarted) && (sen_mask != 0);
 
@@ -554,23 +551,23 @@ void MPLSensor::loadCompassCalibrationEnabler(void* h_dmp_lib, const char* suffi
     const char* error;
     inv_error_t (*enable_disable)(void);
 
-    /* enabler */    
+    /* enabler */
     strcpy(symname, prefix);
     strcat(symname, "enable_");
     strcat(symname, suffix);
 
     error = dlerror();
-    
+
     enable_disable = (inv_error_t(*)()) dlsym(h_dmp_lib, symname);
     error = dlerror();
     if(error != NULL) {
-        ALOGE("%s : could not load compass calibration enable function '%s'", 
+        ALOGE("%s : could not load compass calibration enable function '%s'",
              error, symname);
     } else {
         ALOGI("Loaded symbol '%s'\n", symname);
     }
     nineAxisSF.registerEnabler(enable_disable);
-    
+
     /* disabler */
     strcpy(symname, prefix);
     strcat(symname, "disable_");
@@ -581,7 +578,7 @@ void MPLSensor::loadCompassCalibrationEnabler(void* h_dmp_lib, const char* suffi
     enable_disable = (inv_error_t(*)()) dlsym(h_dmp_lib, symname);
     error = dlerror();
     if(error != NULL) {
-        ALOGE("%s : could not load compass calibration disable function '%s'", 
+        ALOGE("%s : could not load compass calibration disable function '%s'",
              error, symname);
     } else {
         ALOGI("Loaded symbol '%s'\n", symname);
@@ -621,11 +618,11 @@ void MPLSensor::initMPL()
              MPL_LIB_NAME, dlerror());
     } else {
         mldl_cfg = inv_get_dl_config();
-        
+
         if (!mldl_cfg->slave[EXT_SLAVE_TYPE_COMPASS]) {
             ALOGW("No compass configured on this platform : "
                  "mldl_cfg->slave[EXT_SLAVE_TYPE_COMPASS] = NULL\n");
-                 
+
         } else if (mldl_cfg->slave[EXT_SLAVE_TYPE_COMPASS]->id == COMPASS_ID_AK8975) {
             void *h_akm_lib = dlopen(AKM_LIB_NAME, RTLD_NOW);
             if (h_akm_lib) {
@@ -636,9 +633,9 @@ void MPLSensor::initMPL()
                         h_akm_lib, "inv_external_slave_akm8975_open");
                 if (fp_inv_external_slave_akm8975_open) {
                     result = (*fp_inv_external_slave_akm8975_open)();
-                    ALOGE_IF(result != INV_SUCCESS, 
+                    ALOGE_IF(result != INV_SUCCESS,
                             "inv_external_slave_akm8975_open failed.");
-                    loadCompassCalibrationEnabler(h_dmp_lib, 
+                    loadCompassCalibrationEnabler(h_dmp_lib,
                                                   "9x_fusion_external");
                 } else {
                     ALOGE("Unable to find symbol 'inv_external_slave_akm8975_open'");
@@ -648,7 +645,7 @@ void MPLSensor::initMPL()
                      "using InvenSense internals.", AKM_LIB_NAME);
                 loadCompassCalibrationEnabler(h_dmp_lib, "9x_fusion");
             }
-            
+
         } else if (mldl_cfg->slave[EXT_SLAVE_TYPE_COMPASS]->id == COMPASS_ID_AK8963) {
             void *h_akm_lib = dlopen(AKM8963_LIB_NAME, RTLD_NOW);
             if (h_akm_lib) {
@@ -659,9 +656,9 @@ void MPLSensor::initMPL()
                         h_akm_lib, "inv_external_slave_akm8963_open");
                 if (fp_inv_external_slave_akm8963_open) {
                     result = (*fp_inv_external_slave_akm8963_open)();
-                    ALOGE_IF(result != INV_SUCCESS, 
+                    ALOGE_IF(result != INV_SUCCESS,
                             "inv_external_slave_akm8963_open failed.");
-                    loadCompassCalibrationEnabler(h_dmp_lib, 
+                    loadCompassCalibrationEnabler(h_dmp_lib,
                                                   "9x_fusion_external");
                 } else {
                     ALOGE("Unable to find symbol 'inv_external_slave_akm8963_open'");
@@ -671,7 +668,7 @@ void MPLSensor::initMPL()
                      "using InvenSense internals.", AKM8963_LIB_NAME);
                 loadCompassCalibrationEnabler(h_dmp_lib, "9x_fusion");
             }
-            
+
         }else if (mldl_cfg->slave[EXT_SLAVE_TYPE_COMPASS]->id == COMPASS_ID_AMI306) {
             void *h_ami_lib = dlopen(AICHI_LIB_NAME, RTLD_NOW);
             if (h_ami_lib) {
@@ -682,9 +679,9 @@ void MPLSensor::initMPL()
                             h_ami_lib, "inv_external_slave_ami306_open");
                 if (fp_inv_external_slave_ami306_open) {
                     result = (*fp_inv_external_slave_ami306_open)();
-                    ALOGE_IF(result != INV_SUCCESS, 
+                    ALOGE_IF(result != INV_SUCCESS,
                             "inv_external_slave_ami306_open failed.");
-                    loadCompassCalibrationEnabler(h_dmp_lib, 
+                    loadCompassCalibrationEnabler(h_dmp_lib,
                                                   "9x_fusion_external");
                 } else {
                     ALOGE("Unable to find symbol 'inv_external_slave_ami306_open'");
@@ -694,7 +691,7 @@ void MPLSensor::initMPL()
                      "using InvenSense internals.", AICHI_LIB_NAME);
                 loadCompassCalibrationEnabler(h_dmp_lib, "9x_fusion");
             }
-            
+
         } else if (mldl_cfg->slave[EXT_SLAVE_TYPE_COMPASS]->id == COMPASS_ID_MMC328X) {
             void *h_ami_lib = dlopen(MEMSIC_LIB_NAME, RTLD_NOW);
             if (h_ami_lib) {
@@ -705,9 +702,9 @@ void MPLSensor::initMPL()
                             h_ami_lib, "inv_external_slave_mmc3280_open");
                 if (fp_inv_external_slave_mmc3280_open) {
                     result = (*fp_inv_external_slave_mmc3280_open)();
-                    ALOGE_IF(result != INV_SUCCESS, 
+                    ALOGE_IF(result != INV_SUCCESS,
                             "inv_external_slave_mmc3280_open failed.");
-                    loadCompassCalibrationEnabler(h_dmp_lib, 
+                    loadCompassCalibrationEnabler(h_dmp_lib,
                                                   "9x_fusion_external");
                 } else {
                     ALOGE("Unable to find symbol 'inv_external_slave_mmc3280_open'");
@@ -717,7 +714,7 @@ void MPLSensor::initMPL()
                      "using InvenSense internals.", MEMSIC_LIB_NAME);
                 loadCompassCalibrationEnabler(h_dmp_lib, "9x_fusion");
             }
-            
+
         }else {
             loadCompassCalibrationEnabler(h_dmp_lib, "9x_fusion");
         }
@@ -747,7 +744,7 @@ void MPLSensor::initMPL()
     ALOGE_IF(result, "set_fifo_rate returned %d\n", result);
 
     mMpuAccuracy = SENSOR_STATUS_ACCURACY_MEDIUM;
-    
+
     setupCallbacks();
 }
 
@@ -760,27 +757,27 @@ void MPLSensor::enableFIFO()
 
     result = inv_send_accel(INV_ALL, INV_32_BIT);
     ALOGE_IF(result, "Fatal error: inv_send_accel returned %d\n", result);
-    
+
     result = inv_send_quaternion(INV_32_BIT);
     ALOGE_IF(result, "Fatal error: inv_send_quaternion returned %d\n", result);
-    
+
     result = inv_send_linear_accel(INV_ALL, INV_32_BIT);
     ALOGE_IF(result, "Fatal error: inv_send_linear_accel returned %d\n", result);
-    
+
     result = inv_send_linear_accel_in_world(INV_ALL, INV_32_BIT);
     ALOGE_IF(result, "Fatal error: inv_send_linear_accel_in_world returned %d\n",
             result);
-            
+
     result = inv_send_gravity(INV_ALL, INV_32_BIT);
     ALOGE_IF(result, "Fatal error: inv_send_gravity returned %d\n", result);
-    
+
 #if defined USE_TYPE_GYROSCOPE_COMPENSATED
     result = inv_send_gyro(INV_ALL, INV_32_BIT);
     ALOGE_IF(result, "Fatal error: inv_send_gyro returned %d\n", result);
 #else
     result = inv_send_sensor_data(INV_ELEMENT_2 | INV_ELEMENT_3 | INV_ELEMENT_4,
                                   INV_16_BIT);
-    ALOGE_IF(result, 
+    ALOGE_IF(result,
             "Fatal error: inv_send_sensor_data('raw gyro') returned %d\n",
             result);
 #endif
@@ -793,7 +790,7 @@ void MPLSensor::setupCallbacks()
 {
     VFUNC_LOG;
     int result;
-    
+
     result = inv_set_fifo_processed_callback(procData_cb_wrapper);
     ALOGE_IF(result, "set_fifo_processed_callback returned %d", result);
     result = inv_set_motion_callback(mot_cb_wrapper);
@@ -860,7 +857,7 @@ void MPLSensor::gyroHandler(sensors_event_t* s, uint32_t* pending_mask,
 }
 
 /**
- * 对 '*s' 中的 accel_sensor_event_data 再处理. 
+ * 对 '*s' 中的 accel_sensor_event_data 再处理.
  */
 void MPLSensor::accelHandler(sensors_event_t* s, uint32_t* pending_mask,
                              int index)
@@ -872,8 +869,8 @@ void MPLSensor::accelHandler(sensors_event_t* s, uint32_t* pending_mask,
     s->acceleration.v[0] = s->acceleration.v[0] * 9.81;
     s->acceleration.v[1] = s->acceleration.v[1] * 9.81;
     s->acceleration.v[2] = -(s->acceleration.v[2] * 9.81);
-    
-    // 此时, accel_sensor_event_data 基于 original_display 的坐标系. 
+
+    // 此时, accel_sensor_event_data 基于 original_display 的坐标系.
     // 参见 SensorEvent.java doc 中的 "Definition of the coordinate system used by the SensorEvent API."
 
     /* 将 x, y 分量变换到基于 display_saw_by_sf_clients 的坐标系. */
@@ -881,7 +878,7 @@ void MPLSensor::accelHandler(sensors_event_t* s, uint32_t* pending_mask,
     vec2 dest = mTransformForPreRotation.transform(src);
     s->acceleration.v[0] = dest.x;
     s->acceleration.v[1] = dest.y;
-    
+
     //ALOGV_IF(EXTRA_VERBOSE, "accel data: %f %f %f", s->acceleration.v[0], s->acceleration.v[1], s->acceleration.v[2]);
     // D("accel data: %f %f %f", s->acceleration.v[0], s->acceleration.v[1], s->acceleration.v[2]);
     s->acceleration.status = SENSOR_STATUS_ACCURACY_HIGH;
@@ -1000,7 +997,7 @@ void MPLSensor::calcOrientationSensor(float *R, float *values)
     if (values[0] < 0) {
         values[0] += 360.0f;
     }
-    
+
     //Pitch
     tmp = R[7];
     if (tmp > 1.0f)
@@ -1014,7 +1011,7 @@ void MPLSensor::calcOrientationSensor(float *R, float *values)
     if (values[1] > 180.0f) {
         values[1] -= 360.0f;
     }
-    
+
     //Roll
     if ((R[7] > 0.7071067f)) {
         values[2] = (float) atan2f(R[6], R[7]);
@@ -1101,8 +1098,8 @@ int MPLSensor::enable(int32_t handle, int en)
 
     int newState = en ? 1 : 0;
     int err = 0;
-    
-    ALOGV("enable - sensor %s (handle %d) %s -> %s", sname.string(), handle, 
+
+    ALOGV("enable - sensor %s (handle %d) %s -> %s", sname.string(), handle,
             ((mEnabled & (1 << what)) ? "en" : "dis"),
             ((uint32_t(newState) << what) ? "en" : "dis"));
 //    ALOGV_IF((uint32_t(newState) << what) != (mEnabled & (1 << what)),
@@ -1122,7 +1119,7 @@ int MPLSensor::enable(int32_t handle, int en)
         return err;
     }
     pthread_mutex_unlock(&mMplMutex);
-    
+
     return err;
 }
 
@@ -1172,14 +1169,14 @@ int MPLSensor::setDelay(int32_t handle, int64_t ns)
 
     if (ns < 0)
         return -EINVAL;
-        
-    ALOGV("setDelay - sensor %s (handle %d), rate %d ms (%.2f Hz)", 
+
+    ALOGV("setDelay - sensor %s (handle %d), rate %d ms (%.2f Hz)",
          sname.string(), handle, (int)(ns / 1000000LL), 1000000000.f / ns);
 
     pthread_mutex_lock(&mMplMutex);
     mDelays[what] = ns;
     pthread_mutex_unlock(&mMplMutex);
-    
+
     return update_delay();
 }
 
@@ -1194,12 +1191,12 @@ int MPLSensor::update_delay()
         ALOGE("MPU is not available");
         return INV_ERROR_DMP_NOT_STARTED;
     }
-	
+
     pthread_mutex_lock(&mMplMutex);
 
     if (mEnabled) {
         uint64_t wanted = -1LLU;
-        
+
         // search the minimum delay requested across all enabled sensors
         for (int i = 0; i < numSensors; i++) {
             if (mEnabled & (1 << i)) {
@@ -1220,7 +1217,7 @@ int MPLSensor::update_delay()
         adjustFifoRate(rate);
 
         if (rate != mCurFifoRate) {
-            ALOGV("set fifo rate - divider : %d, delay : %llu ms (%.2f Hz)", 
+            ALOGV("set fifo rate - divider : %d, delay : %llu ms (%.2f Hz)",
                  rate, wanted / 1000000LL, 1000000000.f / wanted);
             inv_error_t res = inv_dmp_stop();
             ALOGE_IF(res != INV_SUCCESS, "error stopping the DMP");
@@ -1233,7 +1230,7 @@ int MPLSensor::update_delay()
             rv = (res == INV_SUCCESS);
         }
 
-        if (((inv_get_dl_config()->inv_mpu_cfg->requested_sensors & 
+        if (((inv_get_dl_config()->inv_mpu_cfg->requested_sensors &
                 INV_DMP_PROCESSOR) == 0)) {
             if (mUseTimerirq) {
                 ioctl(mIrqFds.valueFor(TIMERIRQ_FD), TIMERIRQ_STOP, 0);
@@ -1304,7 +1301,7 @@ int MPLSensor::readEvents(sensors_event_t* data, int count)
     pthread_mutex_lock(&mMplMutex);
     for (int i = 0; i < numSensors; i++) {
         if (mEnabled & (1 << i)) {
-            CALL_MEMBER_FN(this,mHandlers[i])(mPendingEvents + i,// .Q : mPendingEvents 中的本征的 sensor_event_data 在哪里赋值? 
+            CALL_MEMBER_FN(this,mHandlers[i])(mPendingEvents + i,// .Q : mPendingEvents 中的本征的 sensor_event_data 在哪里赋值?
                                               &mPendingMask, i);
             mPendingEvents[i].timestamp = tt;
         }
@@ -1407,7 +1404,7 @@ void MPLSensor::wakeEvent()
 /**
  * 返回 display_saw_by_sf_clients 的 基于 original_display 的 orientation.
  */
-MyTransform::orientation_flags_t MPLSensor::getOrientationOfDisplaySawBySfClient() 
+MyTransform::orientation_flags_t MPLSensor::getOrientationOfDisplaySawBySfClient()
 {
     char value[PROPERTY_VALUE_MAX];
 
@@ -1423,7 +1420,6 @@ MyTransform::orientation_flags_t MPLSensor::getOrientationOfDisplaySawBySfClient
         case 3:
             return MyTransform::ROT_270;
         default:
-            E("bad value of ro.sf.hwrotation : %s", value);
             return MyTransform::ROT_0;
             break;
     }

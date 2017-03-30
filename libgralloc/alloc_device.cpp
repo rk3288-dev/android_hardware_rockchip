@@ -16,9 +16,6 @@
  * limitations under the License.
  */
 
-// #define ENABLE_DEBUG_LOG
-#include <log/custom_log.h>
-
 #include <string.h>
 #include <errno.h>
 #include <pthread.h>
@@ -67,9 +64,9 @@ static int gralloc_alloc_framebuffer_locked(alloc_device_t* dev, size_t size, in
 
 	const uint32_t bufferMask = m->bufferMask;
 	const uint32_t numBuffers = m->numBuffers;
-	/* framebufferSize is used for allocating the handle to the framebuffer and refers 
+	/* framebufferSize is used for allocating the handle to the framebuffer and refers
 	 *                 to the size of the actual framebuffer.
-	 * alignedFramebufferSize is used for allocating a possible internal buffer and 
+	 * alignedFramebufferSize is used for allocating a possible internal buffer and
 	 *                        thus need to consider internal alignment requirements. */
 	const size_t framebufferSize = m->finfo.line_length * m->info.yres;
 	const size_t alignedFramebufferSize = GRALLOC_ALIGN(m->finfo.line_length, 64) * m->info.yres;
@@ -517,11 +514,8 @@ static bool get_yuv420_afbc_stride_and_size(int width, int height, int* pixel_st
 
 static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int usage, buffer_handle_t* pHandle, int* pStride)
 {
-    D("enter, w : %d, h : %d, format : 0x%x, usage : 0x%x.", w, h, format, usage);
-
 	if (!pHandle || !pStride)
 	{
-        E("err.");
 		return -EINVAL;
 	}
 
@@ -557,10 +551,6 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 			case HAL_PIXEL_FORMAT_RGBX_8888:
 			case HAL_PIXEL_FORMAT_BGRA_8888:
 		    case HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED:
-#if PLATFORM_SDK_VERSION >= 19
-			case HAL_PIXEL_FORMAT_sRGB_A_8888:
-			case HAL_PIXEL_FORMAT_sRGB_X_8888:
-#endif
 				get_rgb_stride_and_size(w, h, 4, &pixel_stride, &byte_stride, &size, type );
 				break;
 			case HAL_PIXEL_FORMAT_RGB_888:
@@ -579,7 +569,6 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 			case HAL_PIXEL_FORMAT_YCbCr_420_888:
 				if (!get_yv12_stride_and_size(w, h, &pixel_stride, &byte_stride, &size, type))
 				{
-                    E("fail to get stride and size.");
 					return -EINVAL;
 				}
 				break;
@@ -592,23 +581,18 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
             case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
             case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
                 if (!get_yv12_stride_and_size(w, h, &pixel_stride, &byte_stride, &size, type))
-                {
-                    E("err.");
+                {\
                     return -EINVAL;
                 }
-                D("w : %d, h : %d, byte_stride : %d, size : %d; sizeof(tVPU_FRAME) : %d.", w, h, byte_stride, size, sizeof(tVPU_FRAME) );
 
-                size += w*h/2 ; // video dec need more buffer 
-                D_DEC(size)
+                size += w*h/2 ; // video dec need more buffer
 #if !GET_VPU_INTO_FROM_HEAD
                 //zxl:add tVPU_FRAME at the end of allocated buffer
                 size = size + sizeof(tVPU_FRAME);
-#endif			
-                D_DEC(size)
+#endif
 			    break;
 
 			default:
-		        E("unexpected format : 0x%llx", internal_format & GRALLOC_ARM_INTFMT_FMT_MASK);
 				return -EINVAL;
 		}
 	}
@@ -621,7 +605,6 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 				/* YUYAAYUVAA 4:2:0 */
 				if (false == get_yuv_y0l2_stride_and_size(w, h, &pixel_stride, &byte_stride, &size))
 				{
-                    E("err.");
 					return -EINVAL;
 				}
 				break;
@@ -630,7 +613,6 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 				/* Y-UV 4:2:0 */
 				if (false == get_yuv_pX10_stride_and_size(w, h, 2, &pixel_stride, &byte_stride, &size))
 				{
-                    E("err.");
 					return -EINVAL;
 				}
 				break;
@@ -639,7 +621,6 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 				/* Y-UV 4:2:2 */
 				if (false == get_yuv_pX10_stride_and_size(w, h, 1, &pixel_stride, &byte_stride, &size))
 				{
-                    E("err.");
 					return -EINVAL;
 				}
 				break;
@@ -648,7 +629,6 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 				/* YUYV 4:2:0 */
 				if (false == get_yuv_y210_stride_and_size(w, h, &pixel_stride, &byte_stride, &size))
 				{
-                    E("err.");
 					return -EINVAL;
 				}
 				break;
@@ -657,7 +637,6 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 				/* AVYU 2-10-10-10 */
 				if (false == get_yuv_y410_stride_and_size(w, h, &pixel_stride, &byte_stride, &size))
 				{
-                    E("err.");
 					return -EINVAL;
 				}
 				break;
@@ -671,11 +650,10 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 				/* YUV 4:2:0 compressed */
 				if (false == get_yuv420_afbc_stride_and_size(w, h, &pixel_stride, &byte_stride, &size))
 				{
-                    E("err.");
 					return -EINVAL;
 				}
 				break;
-            
+
 			default:
         		AERR("Invalid internal format %llx", internal_format & GRALLOC_ARM_INTFMT_FMT_MASK);
 				return -EINVAL;
@@ -696,7 +674,6 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 
 	if (err < 0)
 	{
-        E("err : %d", err);
 		return err;
 	}
 
@@ -716,7 +693,6 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 
 #if MALI_AFBC_GRALLOC == 1
 	err = gralloc_buffer_attr_allocate( hnd );
-	//ALOGD("err=%d,isfb=%x,[%d,%x]",err,usage & GRALLOC_USAGE_HW_FB,hnd->share_attr_fd,hnd->attr_base);
 	if( err < 0 )
 	{
 		private_module_t* m = reinterpret_cast<private_module_t*>(dev->common.module);
@@ -764,8 +740,7 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 	hnd->height = h;
 	hnd->stride = pixel_stride;
 
-    //ALOGD("Isfb=%x,[%d,%d,%d,%d],fmt=%d,byte_stride=%d",usage & GRALLOC_USAGE_HW_FB,hnd->width,hnd->height,hnd->stride,hnd->byte_stride,hnd->format,byte_stride);
-	*pStride = pixel_stride;
+    *pStride = pixel_stride;
 	return 0;
 }
 
@@ -785,7 +760,7 @@ static int alloc_device_free(alloc_device_t* dev, buffer_handle_t handle)
 		private_module_t* m = reinterpret_cast<private_module_t*>(dev->common.module);
 		const size_t bufferSize = m->finfo.line_length * m->info.yres;
 		int index = ((uintptr_t)hnd->base - (uintptr_t)m->framebuffer->base) / bufferSize;
-		m->bufferMask &= ~(1<<index); 
+		m->bufferMask &= ~(1<<index);
 		close(hnd->fd);
 	}
 
@@ -802,7 +777,7 @@ static int alloc_device_free(alloc_device_t* dev, buffer_handle_t handle)
 int alloc_device_open(hw_module_t const* module, const char* name, hw_device_t** device)
 {
 	alloc_device_t *dev;
-	
+
 	dev = new alloc_device_t;
 	if (NULL == dev)
 	{
@@ -824,7 +799,7 @@ int alloc_device_open(hw_module_t const* module, const char* name, hw_device_t**
 		delete dev;
 		return -1;
 	}
-	
+
 	*device = &dev->common;
 
 	return 0;

@@ -38,7 +38,7 @@ void CameraIspAdapter::AfpsResChangeCb()
    // emit resChanged();
     LOG_FUNCTION_NAME
 
-    
+
 
     LOG_FUNCTION_NAME_EXIT
 }
@@ -86,19 +86,19 @@ CameraIspAdapter::~CameraIspAdapter()
     if(mDispFrameLeak != 0){
         LOGE("\n\n\n\nmay have disp frame mem leak,count is %d\n\n\n\n",mDispFrameLeak);
     }
-    
+
     if(mVideoEncFrameLeak!=0){
         LOGE("\n\n\n\nmay have video frame mem leak,count is %d\n\n\n\n",mVideoEncFrameLeak);
     }
-    
+
     if(mPreviewCBFrameLeak != 0){
         LOGE("\n\n\n\nmay have previewcb frame mem leak,count is %d\n\n\n\n",mPreviewCBFrameLeak);
     }
-    
+
     if(mPicEncFrameLeak != 0){
         LOGE("\n\n\n\nmay have pic enc frame mem leak,count is %d\n\n\n\n",mPicEncFrameLeak);
     }
-	
+
 }
 int CameraIspAdapter::cameraCreate(int cameraId)
 {
@@ -112,13 +112,13 @@ int CameraIspAdapter::cameraCreate(int cameraId)
 	hdmiIn_Exit = true;
 
 	preview_frame_inval = pCamInfo->mHardInfo.mSensorInfo.awb_frame_skip;
-	
+
     pCamInfo->mLibIspVersion = CONFIG_SILICONIMAGE_LIBISP_VERSION;
-	
+
 	for(i=0; i<4; i++){
 		mipiLaneNum += (pCamInfo->mHardInfo.mSensorInfo.mPhy.info.mipi.data_en_bit>>i)&0x01;
 	}
-	
+
 #ifdef ROCKCHIP_ION_VERSION
 	isp_halpara.is_new_ion = (bool_t)true;
 #else
@@ -127,7 +127,7 @@ int CameraIspAdapter::cameraCreate(int cameraId)
     isp_halpara.mipi_lanes = mipiLaneNum;
 	mCtxCbResChange.pIspAdapter = (void*)this;
     m_camDevice = new CamDevice( HalHolder::handle(dev_filename,&isp_halpara), CameraIspAdapter_AfpsResChangeCb, (void*)&mCtxCbResChange ,NULL, mipiLaneNum);
-	
+
 	//load sensor
     loadSensor( cameraId);
 
@@ -136,7 +136,7 @@ int CameraIspAdapter::cameraCreate(int cameraId)
         rk_cam_total_info *pCamInfo = gCamInfos[mCamId].pcam_total_info;
         LOGE("sensor name %s",pCamInfo->mHardInfo.mSensorInfo.mSensorName);
         if((strcmp(pCamInfo->mHardInfo.mSensorInfo.mSensorName,"TC358749XBG")==0)) {
-            int camsys_fd;    
+            int camsys_fd;
             const char HdmiAudioFilePath[] = "/sys/class/hdmiin_reg/hdmiin_audio";
             LOGE("open TC358749XBG camsys");
             //audio hw stop must before hdmiin audio start
@@ -154,10 +154,10 @@ int CameraIspAdapter::cameraCreate(int cameraId)
     }
 
     //open image
-    //openImage("/system/lib/libisp_isi_drv_OV8825.so");   
+    //openImage("/system/lib/libisp_isi_drv_OV8825.so");
 
     {
-        if (OSLAYER_OK != osQueueInit(&mAfListenerQue.queue,100, sizeof(CamEngineAfEvt_t)))   /* ddl@rock-chips.com: v0.0x22.0 */  
+        if (OSLAYER_OK != osQueueInit(&mAfListenerQue.queue,100, sizeof(CamEngineAfEvt_t)))   /* ddl@rock-chips.com: v0.0x22.0 */
         {
             LOGE("create af listener queue failed!");
         }
@@ -188,16 +188,16 @@ int CameraIspAdapter::cameraDestroy()
         int ret;
 
         cmd.evnt_id = (CamEngineAfEvtId_t)0xfefe5aa5;
-        
+
         osQueueWrite(&mAfListenerQue.queue, &cmd);
-        
+
         if(mAfListenerThread!= NULL){
         	mAfListenerThread->requestExitAndWait();
         	mAfListenerThread.clear();
     	}
 		//hdmiin thread
         if (hdmiIn_Exit == false) {
-            int camsys_fd;    
+            int camsys_fd;
             const char HdmiAudioFilePath[] = "/sys/class/hdmiin_reg/hdmiin_audio";
             LOGE("open TC358749XBG camsys");
 
@@ -219,12 +219,12 @@ int CameraIspAdapter::cameraDestroy()
         	mHdmiinListenerThread.clear();
     	}
         osQueueDestroy(&mAfListenerQue.queue);
-        
+
     }
 
     preview_frame_inval = 0;
     //check flash mode last time
-    
+
     if(mParameters.get(CameraParameters::KEY_SUPPORTED_FLASH_MODES) &&
         (strcmp(mParameters.get(CameraParameters::KEY_FLASH_MODE),CameraParameters::FLASH_MODE_TORCH)==0)){
         CamEngineFlashCfg_t flash_cfg;
@@ -262,7 +262,7 @@ void CameraIspAdapter::setupPreview(int width_sensor,int height_sensor,int previ
         dcWin.width = ((ratio*preview_w/10) & ~0x1);
         dcWin.height = ((ratio*preview_h/10) & ~0x1);
         dcWin.hOffset =(ABS(width_sensor-dcWin.width ))>>1;
-        dcWin.vOffset = (ABS(height_sensor-dcWin.height))>>1;        
+        dcWin.vOffset = (ABS(height_sensor-dcWin.height))>>1;
     }else{
         dcWin.width = width_sensor;
         dcWin.height = height_sensor;
@@ -270,7 +270,7 @@ void CameraIspAdapter::setupPreview(int width_sensor,int height_sensor,int previ
         dcWin.vOffset = 0;
     }
 
-#if (USE_RGA_TODO_ZOOM == 0)            /* zyc@rock-chips.com: v0.0x22.0 */ 
+#if (USE_RGA_TODO_ZOOM == 0)            /* zyc@rock-chips.com: v0.0x22.0 */
 
     if((zoom_val > mZoomMin) && (zoom_val <= mZoomMax)){
         if((preview_w <= 2592) && (preview_h <= 1944)){
@@ -302,7 +302,7 @@ void CameraIspAdapter::setupPreview(int width_sensor,int height_sensor,int previ
         m_camDevice->previewSetup_ex( dcWin, preview_w, preview_h,
                                  CAMERIC_MI_DATAMODE_YUV420,CAMERIC_MI_DATASTORAGE_SEMIPLANAR,(bool_t)true);
 		bufSize = ((max_w+15)&(~0xf))*((max_h+15)&(~0xf))*3/2 ;
-		bufNum = CONFIG_CAMERA_ISP_BUF_REQ_CNT;		
+		bufNum = CONFIG_CAMERA_ISP_BUF_REQ_CNT;
         LOGD("isp out put format is YUV420SP.");
     }else if(mISPOutputFmt == ISP_OUT_RAW12){
         m_camDevice->previewSetup_ex( dcWin, preview_w, preview_h,
@@ -327,7 +327,7 @@ status_t CameraIspAdapter::startPreview(int preview_w,int preview_h,int w, int h
     bool enable_flash = false;
     bool low_illumin = false;
     bool is_video = false;
-    
+
 	property_set("sys.hdmiin.display", "0");//just used by hdmi-in
     if ( ( !m_camDevice->hasSensor() ) &&
          ( !m_camDevice->hasImage()  ) ){
@@ -350,14 +350,14 @@ status_t CameraIspAdapter::startPreview(int preview_w,int preview_h,int w, int h
 
 
 
-    is_video = (((preview_w == 1920) && (preview_h == 1080)) || 
+    is_video = (((preview_w == 1920) && (preview_h == 1080)) ||
                 ((preview_w == 1280) && (preview_h == 720)));
 
     //must to get illum befor resolution changed
     if (is_capture) {
         enable_flash = isNeedToEnableFlash();
 
-        m_camDevice->lock3a((Lock_awb|Lock_aec)); 
+        m_camDevice->lock3a((CamEngine3aLock_t)(Lock_awb|Lock_aec));
     }
     low_illumin = isLowIllumin();
 
@@ -377,7 +377,7 @@ status_t CameraIspAdapter::startPreview(int preview_w,int preview_h,int w, int h
         resReq.request_w = preview_w;
         resReq.request_h = preview_h;
 
-        
+
         if ((m_camDevice->getIntegrationTime(curExp) == false)) {
             curExp = 0.0;
         }
@@ -385,24 +385,24 @@ status_t CameraIspAdapter::startPreview(int preview_w,int preview_h,int w, int h
         if (m_camDevice->getGain(curGain) == false){
             curGain = 0.0;
         }
-        
+
         if (is_video) {
             resReq.request_fps = 20;
         } else if (is_capture) {
             resReq.request_fps = 0;
             resReq.request_exp_t = curExp*curGain;
-        } else { 
-            resReq.request_fps = 10; 
+        } else {
+            resReq.request_fps = 10;
             resReq.request_exp_t = curExp;
         }
-        
-        resReq.requset_aspect = (bool_t)false;        
-        resReq.request_fullfov = (bool_t)mImgAllFovReq;        
+
+        resReq.requset_aspect = (bool_t)false;
+        resReq.request_fullfov = (bool_t)mImgAllFovReq;
         m_camDevice->getPreferedSensorRes(&resReq);
-        
+
         width_sensor = ISI_RES_W_GET(resReq.resolution);
         height_sensor = ISI_RES_H_GET(resReq.resolution);
-		
+
         //stop streaming
         if(-1 == stop())
 			goto startPreview_end;
@@ -422,14 +422,14 @@ status_t CameraIspAdapter::startPreview(int preview_w,int preview_h,int w, int h
         #if CONFIG_CAMERA_SCALE_CROP_ISP
         setupPreview(width_sensor,height_sensor,preview_w,preview_h,mZoomVal);
         #else
-        if ((preview_w == 1600) && (preview_h == 1200) && 
+        if ((preview_w == 1600) && (preview_h == 1200) &&
             (width_sensor==1632) && (height_sensor == 1224) ) {
             setupPreview(width_sensor,height_sensor,preview_w,preview_h,mZoomVal);
         } else {
             setupPreview(width_sensor,height_sensor,width_sensor,height_sensor,mZoomVal);
         }
         #endif
-		
+
         m_camDevice->getPathConfig(CHAIN_MASTER,CAM_ENGINE_PATH_MAIN,mainPathConfig);
         m_camDevice->getPathConfig(CHAIN_MASTER,CAM_ENGINE_PATH_SELF,selfPathConfig);
         m_camDevice->setPathConfig( CHAIN_MASTER, mainPathConfig, selfPathConfig  );
@@ -437,18 +437,18 @@ status_t CameraIspAdapter::startPreview(int preview_w,int preview_h,int w, int h
 		//start streaming
         if(-1 == start())
 			goto startPreview_end;
-		
+
 		//set mannual exposure and mannual whitebalance
 		setMe(mParameters.get(CameraParameters::KEY_EXPOSURE_COMPENSATION));
-		setMwb(mParameters.get(CameraParameters::KEY_WHITE_BALANCE));		
+		setMwb(mParameters.get(CameraParameters::KEY_WHITE_BALANCE));
 		//
         mCamDrvWidth = width_sensor;
         mCamDrvHeight = height_sensor;
         mCamPreviewH = preview_h;
         mCamPreviewW = preview_w;
-        
+
     }else{
-    
+
         if(mPreviewRunning == 0){
 			if(-1 == start())
 				goto startPreview_end;
@@ -484,12 +484,12 @@ status_t CameraIspAdapter::startPreview(int preview_w,int preview_h,int w, int h
         if (strcmp(mParameters.get(CameraParameters::KEY_FOCUS_MODE),CameraParameters::FOCUS_MODE_CONTINUOUS_PICTURE)==0) {
             err_af = m_camDevice->startAfContinous(CAM_ENGINE_AUTOFOCUS_SEARCH_ALGORITHM_ADAPTIVE_RANGE);
         	if ( err_af == false ){
-        		LOGE("Set startAfContinous failed");        		
-        	} 
+        		LOGE("Set startAfContinous failed");
+        	}
         } else if (strcmp(mParameters.get(CameraParameters::KEY_FOCUS_MODE),CameraParameters::FOCUS_MODE_CONTINUOUS_VIDEO)==0) {
             unsigned int maxFocus, minFocus;
-            m_camDevice->stopAf();  
-            
+            m_camDevice->stopAf();
+
             if (m_camDevice->getFocusLimits(minFocus, maxFocus) == true) {
                 m_camDevice->setFocus(maxFocus);
             } else {
@@ -497,9 +497,9 @@ status_t CameraIspAdapter::startPreview(int preview_w,int preview_h,int w, int h
             }
         }
 
-        m_camDevice->unlock3a((Lock_awb|Lock_aec));
-        
-    } 
+        m_camDevice->unlock3a((CamEngine3aLock_t)(Lock_awb|Lock_aec));
+
+    }
     flashControl(enable_flash);
 
     mPreviewRunning = 1;
@@ -518,11 +518,11 @@ status_t CameraIspAdapter::stopPreview()
     if (strcmp(mParameters.get(CameraParameters::KEY_FOCUS_MODE),CameraParameters::FOCUS_MODE_CONTINUOUS_PICTURE)==0) {
         m_camDevice->stopAf();
     }
-    
+
     if(mPreviewRunning) {
         if(-1 == stop())
 			return -1;
-        clearFrameArray();        
+        clearFrameArray();
 
     }
     mPreviewRunning = 0;
@@ -534,16 +534,16 @@ int CameraIspAdapter::setParameters(const CameraParameters &params_set,bool &isR
 {
     int fps_min,fps_max;
     int framerate=0;
-    
+
     if (strstr(mParameters.get(CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES), params_set.get(CameraParameters::KEY_PREVIEW_SIZE)) == NULL) {
-        LOGE("PreviewSize(%s) not supported",params_set.get(CameraParameters::KEY_PREVIEW_SIZE));        
+        LOGE("PreviewSize(%s) not supported",params_set.get(CameraParameters::KEY_PREVIEW_SIZE));
         return BAD_VALUE;
     } else if (strcmp(mParameters.get(CameraParameters::KEY_PREVIEW_SIZE), params_set.get(CameraParameters::KEY_PREVIEW_SIZE))) {
         LOG1("Set preview size %s",params_set.get(CameraParameters::KEY_PREVIEW_SIZE));
         //should update preview cb settings ,for cts
         int w,h;
         const char * fmt=  params_set.getPreviewFormat();
-		params_set.getPreviewSize(&w, &h); 
+		params_set.getPreviewSize(&w, &h);
         mRefEventNotifier->setPreviewDataCbRes(w, h, fmt);
 
     }
@@ -578,13 +578,13 @@ int CameraIspAdapter::setParameters(const CameraParameters &params_set,bool &isR
                 int hOff,vOff,w,h,weight;
                 CamEngineWindow_t aeWin;
     			const char* zoneStr = params_set.get(CameraParameters::KEY_METERING_AREAS);
-    	    	if (zoneStr) {   
+    	    	if (zoneStr) {
                     LOG1("meter zoneStr %s",zoneStr);
         	        hOff = strtol(zoneStr+1,0,0);
         	        zoneStr = strstr(zoneStr,",");
         	        vOff = strtol(zoneStr+1,0,0);
         		    zoneStr = strstr(zoneStr+1,",");
-        	        w = strtol(zoneStr+1,0,0);                    
+        	        w = strtol(zoneStr+1,0,0);
                     zoneStr = strstr(zoneStr+1,",");
         	        h = strtol(zoneStr+1,0,0);
                     zoneStr = strstr(zoneStr+1,",");
@@ -593,7 +593,7 @@ int CameraIspAdapter::setParameters(const CameraParameters &params_set,bool &isR
                         //more than one zone
                         return BAD_VALUE;
                     }
-                    
+
                     w -= hOff;
                     h -= vOff;
                     if((w == 0) && (h == 0) && (hOff == 0) && (weight == 0)){
@@ -611,10 +611,10 @@ int CameraIspAdapter::setParameters(const CameraParameters &params_set,bool &isR
                         w = 0;
                         h = 0;
                         return BAD_VALUE;
-                    } 
+                    }
 
                     //ddl@rock-chips.com v1.0x1d.0
-                    if (hOff || vOff || w || h){                           
+                    if (hOff || vOff || w || h){
                         m_camDevice->setAecHistMeasureWinAndMode(hOff,vOff,w,h,AverageMetering);
                     } else {
                         m_camDevice->setAecHistMeasureWinAndMode(hOff,vOff,w,h,CentreWeightMetering);
@@ -631,27 +631,27 @@ int CameraIspAdapter::setParameters(const CameraParameters &params_set,bool &isR
     {
         bool err_af = false;
 
-        if (strstr(mParameters.get(CameraParameters::KEY_SUPPORTED_FOCUS_MODES),params_set.get(CameraParameters::KEY_FOCUS_MODE))) {            
+        if (strstr(mParameters.get(CameraParameters::KEY_SUPPORTED_FOCUS_MODES),params_set.get(CameraParameters::KEY_FOCUS_MODE))) {
             // Continues picture focus
             if (strcmp(params_set.get(CameraParameters::KEY_FOCUS_MODE),CameraParameters::FOCUS_MODE_CONTINUOUS_PICTURE)==0) {
                 if (mPreviewRunning == 1) {
-                    /* ddl@rock-chips.com: v0.0x22.0 */ 
+                    /* ddl@rock-chips.com: v0.0x22.0 */
                     if (strcmp(mParameters.get(CameraParameters::KEY_FOCUS_MODE),CameraParameters::FOCUS_MODE_CONTINUOUS_PICTURE)) {
                         err_af = m_camDevice->startAfContinous(CAM_ENGINE_AUTOFOCUS_SEARCH_ALGORITHM_ADAPTIVE_RANGE);
                     	if ( err_af == false ){
-                    		LOGE("Set startAfContinous failed");        		
-                    	} 
+                    		LOGE("Set startAfContinous failed");
+                    	}
                     }
                 }
             // Continues video focus is not implement, so fixd focus; /* ddl@rock-chips.com: v0.c.0 */
             } else if (strcmp(params_set.get(CameraParameters::KEY_FOCUS_MODE),CameraParameters::FOCUS_MODE_CONTINUOUS_VIDEO)==0) {
                 if (mPreviewRunning == 1) {
-                    /* ddl@rock-chips.com: v0.0x22.0 */ 
+                    /* ddl@rock-chips.com: v0.0x22.0 */
                     if (strcmp(mParameters.get(CameraParameters::KEY_FOCUS_MODE),CameraParameters::FOCUS_MODE_CONTINUOUS_VIDEO)) {
                         unsigned int maxFocus, minFocus;
 
                         m_camDevice->stopAf();  /* ddl@rock-chips.com: v0.d.3 */
-                        
+
                         if (m_camDevice->getFocusLimits(minFocus, maxFocus) == true) {
                             m_camDevice->setFocus(maxFocus);
                         } else {
@@ -659,13 +659,13 @@ int CameraIspAdapter::setParameters(const CameraParameters &params_set,bool &isR
                         }
         				LOG1("Continues-video focus is fixd focus now!");
                     }
-                }                
+                }
             }
-            
+
             if (mParameters.getInt(CameraParameters::KEY_MAX_NUM_FOCUS_AREAS) == 1) {
                 mAfChk = false;
-                /* ddl@rock-chips.com: v0.0x22.0 */ 
-                if ((mParameters.get(CameraParameters::KEY_FOCUS_AREAS) == NULL) || 
+                /* ddl@rock-chips.com: v0.0x22.0 */
+                if ((mParameters.get(CameraParameters::KEY_FOCUS_AREAS) == NULL) ||
                     (params_set.get(CameraParameters::KEY_FOCUS_AREAS) == NULL)) {
                     mAfChk = true;
                     LOG1("Focus areas is change(%s -> %s), Must af again!!",
@@ -676,13 +676,13 @@ int CameraIspAdapter::setParameters(const CameraParameters &params_set,bool &isR
 
         	    	int hOff,vOff,w,h,weight;
         			const char* zoneStr = params_set.get(CameraParameters::KEY_FOCUS_AREAS);
-        	    	if (zoneStr) {  
+        	    	if (zoneStr) {
                         LOG1("focus zoneStr %s",zoneStr);
             	        vOff = strtol(zoneStr+1,0,0);
             	        zoneStr = strstr(zoneStr,",");
             	        hOff = strtol(zoneStr+1,0,0);
             		    zoneStr = strstr(zoneStr+1,",");
-            	        w = strtol(zoneStr+1,0,0);                    
+            	        w = strtol(zoneStr+1,0,0);
                         zoneStr = strstr(zoneStr+1,",");
             	        h = strtol(zoneStr+1,0,0);
                         zoneStr = strstr(zoneStr+1,",");
@@ -693,8 +693,8 @@ int CameraIspAdapter::setParameters(const CameraParameters &params_set,bool &isR
                             return BAD_VALUE;
                         }
                         w -= vOff;
-                        h -= hOff;                    
-                        
+                        h -= hOff;
+
                         if((w == 0) && (h == 0) && (hOff == 0) && (weight == 0)){
                             hOff = 0;
                             vOff = 0;
@@ -712,13 +712,13 @@ int CameraIspAdapter::setParameters(const CameraParameters &params_set,bool &isR
                         return BAD_VALUE;
                         }
         	    	}
-                    
+
                     LOG1("Focus areas is change(%s -> %s), Must af again!!",
                         mParameters.get(CameraParameters::KEY_FOCUS_AREAS),
                         params_set.get(CameraParameters::KEY_FOCUS_AREAS));
                 }
             }
-            
+
             if( err_af == true )
                 LOG1("Set focus mode: %s success",params_set.get(CameraParameters::KEY_FOCUS_MODE));
         } else {
@@ -727,13 +727,13 @@ int CameraIspAdapter::setParameters(const CameraParameters &params_set,bool &isR
                 mParameters.get(CameraParameters::KEY_SUPPORTED_FOCUS_MODES));
             if (strstr(mParameters.get(CameraParameters::KEY_SUPPORTED_FOCUS_MODES),CameraParameters::FOCUS_MODE_AUTO))
                 mParameters.set(CameraParameters::KEY_FOCUS_MODE, CameraParameters::FOCUS_MODE_AUTO);
-            else 
+            else
                 mParameters.set(CameraParameters::KEY_FOCUS_MODE, CameraParameters::FOCUS_MODE_FIXED);
             return BAD_VALUE;
         }
 
     }
-  
+
 
     {
         CamEngineFlashCfg_t flash_cfg;
@@ -788,11 +788,11 @@ int CameraIspAdapter::setParameters(const CameraParameters &params_set,bool &isR
         }
 
     }
-	if (!cameraConfig(params_set,false,isRestartValue)) {        
+	if (!cameraConfig(params_set,false,isRestartValue)) {
         LOG1("PreviewSize(%s)", mParameters.get(CameraParameters::KEY_PREVIEW_SIZE));
-        LOG1("PreviewFormat(%s)",params_set.getPreviewFormat());  
+        LOG1("PreviewFormat(%s)",params_set.getPreviewFormat());
         LOG1("FPS Range(%s)",mParameters.get(CameraParameters::KEY_PREVIEW_FPS_RANGE));
-        LOG1("PictureSize(%s)",mParameters.get(CameraParameters::KEY_PICTURE_SIZE)); 
+        LOG1("PictureSize(%s)",mParameters.get(CameraParameters::KEY_PICTURE_SIZE));
         LOG1("PictureFormat(%s)  ", params_set.getPictureFormat());
         LOG1("Framerate: %d  ", framerate);
         LOG1("WhiteBalance: %s", params_set.get(CameraParameters::KEY_WHITE_BALANCE));
@@ -804,8 +804,8 @@ int CameraIspAdapter::setParameters(const CameraParameters &params_set,bool &isR
     	LOG1("ZoomIndex: %s", params_set.get(CameraParameters::KEY_ZOOM));
 	}else{
 	    return BAD_VALUE;
-	}  
-    
+	}
+
     return 0;
 }
 void CameraIspAdapter::initDefaultParameters(int camFd)
@@ -824,7 +824,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
         unsigned int pixels;
         unsigned int max_w,max_h,max_fps,maxfps_res;
         bool chk_720p,chk_1080p;
-        
+
         parameterString = "176x144,320x240,352x288,640x480,720x480,800x600";
         LOG1("Sensor resolution list:");
 
@@ -836,10 +836,10 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
         chk_720p = false;
         chk_1080p = false;
 	    while (m_camDevice->getSensorCaps(pCaps) == true) {
-         
-            memset(string,0x00,sizeof(string));        
+
+            memset(string,0x00,sizeof(string));
             if (ISI_FPS_GET(pCaps.Resolution) >= 15) {
-                pixels = ISI_RES_W_GET(pCaps.Resolution)*ISI_RES_H_GET(pCaps.Resolution)*10;                
+                pixels = ISI_RES_W_GET(pCaps.Resolution)*ISI_RES_H_GET(pCaps.Resolution)*10;
                 if (pixels > 1280*720*9) {
                     if (chk_720p == false) {
                         strcat(string,",1280x720");
@@ -852,7 +852,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
                         strcat(string,",1920x1080");
                         chk_1080p = true;
                     }
-                } 
+                }
 
                 parameterString.append(string);
             }
@@ -860,7 +860,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
             if (max_fps < ISI_FPS_GET(pCaps.Resolution)) {
                 maxfps_res = pCaps.Resolution;
             }
-            memset(string,0x00,sizeof(string)); 
+            memset(string,0x00,sizeof(string));
             sprintf(string,",%dx%d",ISI_RES_W_GET(pCaps.Resolution),ISI_RES_H_GET(pCaps.Resolution));
             if (strcmp(string,",1600x1200")){
                 parameterString.append(string);
@@ -874,18 +874,18 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
                 max_h = ISI_RES_H_GET(pCaps.Resolution);
             pCaps.Index++;
 	    };
-        
+
         if (pCamInfo->mSoftInfo.mPreviewWidth && pCamInfo->mSoftInfo.mPreviewHeight) {
-            memset(string,0x00,sizeof(string));    
-            sprintf(string,"%d",pCamInfo->mSoftInfo.mPreviewWidth);  
+            memset(string,0x00,sizeof(string));
+            sprintf(string,"%d",pCamInfo->mSoftInfo.mPreviewWidth);
             params.set(KEY_PREVIEW_W_FORCE,string);
             memset(string,0x00,sizeof(string));
-            sprintf(string,"%d",pCamInfo->mSoftInfo.mPreviewHeight);  
+            sprintf(string,"%d",pCamInfo->mSoftInfo.mPreviewHeight);
             params.set(KEY_PREVIEW_H_FORCE,string);
             memset(string,0x00,sizeof(string));
-            sprintf(string,"%dx%d",pCamInfo->mSoftInfo.mPreviewWidth,pCamInfo->mSoftInfo.mPreviewHeight);  
+            sprintf(string,"%dx%d",pCamInfo->mSoftInfo.mPreviewWidth,pCamInfo->mSoftInfo.mPreviewHeight);
         } else {
-            memset(string,0x00,sizeof(string)); 
+            memset(string,0x00,sizeof(string));
             sprintf(string,"%dx%d",ISI_RES_W_GET(maxfps_res),ISI_RES_H_GET(maxfps_res));
         }
 
@@ -893,24 +893,24 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
         if (max_w*10/max_h == 40/3) {          //  4:3 Sensor
             if (pixels > 12800000) {
                 if ((max_w != 4128)&&(max_h != 3096))
-                    parameterString.append(",2064x1548");                
+                    parameterString.append(",2064x1548");
             } else if (pixels > 7900000) {
                 if ((max_w != 3264)&&(max_h != 2448))
-                    parameterString.append(",1632x1224");                
+                    parameterString.append(",1632x1224");
             } else if (pixels > 5000000) {
                 if ((max_w != 2592)&&(max_h != 1944))
                     parameterString.append(",1296x972");
             }
         }
-        
+
         params.set(CameraParameters::KEY_PREVIEW_SIZE,string);
-        params.set(CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES, parameterString.string());        
-        
+        params.set(CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES, parameterString.string());
+
         memset(string,0x00,sizeof(string));
         sprintf(string,"%dx%d",max_w,max_h);
-        parameterString = string;        
+        parameterString = string;
 		int interpolationRes = pCamInfo->mSoftInfo.mInterpolationRes;
-		if(interpolationRes){			
+		if(interpolationRes){
 	        if (max_w*10/max_h == 40/3) {          //  4:3 Sensor
 				if (interpolationRes >= 8000000) {
 	                if ((max_w != 3264)&&(max_h != 2448))
@@ -949,7 +949,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
 
             }
 		}
-        parameterString.append(",640x480,352x288,320x240,176x144");        
+        parameterString.append(",640x480,352x288,320x240,176x144");
         params.set(CameraParameters::KEY_PICTURE_SIZE, string);
         params.set(CameraParameters::KEY_SUPPORTED_PICTURE_SIZES, parameterString.string());
 	}
@@ -957,7 +957,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
 #if (CONFIG_CAMERA_SETVIDEOSIZE == 1)
     params.set(CameraParameters::KEY_PREFERRED_PREVIEW_SIZE_FOR_VIDEO,"640x480");
 	params.set(CameraParameters::KEY_VIDEO_SIZE,"640x480");
-	params.set(CameraParameters::KEY_SUPPORTED_VIDEO_SIZES,parameterString); //here maybe erro , cause may not same with  XML 
+	params.set(CameraParameters::KEY_SUPPORTED_VIDEO_SIZES,parameterString); //here maybe erro , cause may not same with  XML
 #endif
 
 
@@ -975,7 +975,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
        if(0){
            params.set(CameraParameters::KEY_MAX_NUM_FOCUS_AREAS,"0");
            params.set(CameraParameters::KEY_SUPPORTED_FOCUS_MODES, CameraParameters::FOCUS_MODE_FIXED);
-       }else{ 
+       }else{
 		if (strcmp(pCamInfo->mHardInfo.mVcmInfo.mVcmDrvName,"NC")!=0) {
           //if(0){
               LOGD("------mHardInfo.mVcmInfo.mVcmDrvName in not NC-----\n");
@@ -984,7 +984,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
                 parameterString.append(",");
                 parameterString.append(CameraParameters::FOCUS_MODE_AUTO);
                 params.set(CameraParameters::KEY_FOCUS_MODE, CameraParameters::FOCUS_MODE_AUTO);
-        		params.set(CameraParameters::KEY_MAX_NUM_FOCUS_AREAS,"1");  
+        		params.set(CameraParameters::KEY_MAX_NUM_FOCUS_AREAS,"1");
 
                 if (pCamInfo->mSoftInfo.mFocusConfig.mFocusSupport & (0x01<<FOCUS_CONTINUOUS_VIDEO_BITPOS)) {
                     /* ddl@rock-chips.com: v0.d.0 */
@@ -995,7 +995,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
                 if (pCamInfo->mSoftInfo.mFocusConfig.mFocusSupport & (0x01<<FOCUS_CONTINUOUS_PICTURE_BITPOS)) {
                     parameterString.append(",");
                     parameterString.append(CameraParameters::FOCUS_MODE_CONTINUOUS_PICTURE);
-                } 
+                }
             } else {
              	params.set(CameraParameters::KEY_MAX_NUM_FOCUS_AREAS,"0");
         	}
@@ -1018,7 +1018,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
 
             parameterString.append(",");
             parameterString.append(CameraParameters::FLASH_MODE_ON);
-            
+
             parameterString.append(",");
             parameterString.append(CameraParameters::FLASH_MODE_AUTO);
 
@@ -1027,7 +1027,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
                 parameterString.append(",");
                 parameterString.append(CameraParameters::FLASH_MODE_TORCH);
             }
-            
+
             //must FLASH_MODE_OFF when initial,forced by cts
             params.set(CameraParameters::KEY_FLASH_MODE,CameraParameters::FLASH_MODE_OFF);
             params.set(CameraParameters::KEY_SUPPORTED_FLASH_MODES,parameterString.string());
@@ -1048,15 +1048,15 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
     {
         if (pCamInfo->mSoftInfo.mZoomConfig == 1) {
             char str_zoom_max[3],str_zoom_element[5];
-            char str[300];           
+            char str[300];
             int max,i;
-            
+
         	mZoomMax = 300;
         	mZoomMin= 100;
-        	mZoomStep = 5;	
+        	mZoomStep = 5;
             memset(str,0x00,sizeof(str));
             strcpy(str, "");//default zoom
-            
+
         	max = (mZoomMax - mZoomMin)/mZoomStep;
         	sprintf(str_zoom_max,"%d",max);
         	params.set(CameraParameters::KEY_ZOOM_SUPPORTED, "true");
@@ -1072,26 +1072,26 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
         	params.set(CameraParameters::KEY_ZOOM_SUPPORTED, "false");
         }
 
-    }	
+    }
 
     //WB setting
-	{   
+	{
     	parameterString = "auto";
-    	
+
         if(pCamInfo->mSoftInfo.mAwbConfig.mAwbSupport&(0x1<<AWB_INCANDESCENT_BITPOS)) {
             if (m_camDevice->chkAwbIllumination((char*)"A") == true) {
                 parameterString.append(",");
                 parameterString.append(CameraParameters::WHITE_BALANCE_INCANDESCENT);
             }
         }
-        
+
     	if(pCamInfo->mSoftInfo.mAwbConfig.mAwbSupport&0x1<<(AWB_FLUORESCENT_BITPOS)){
             if (m_camDevice->chkAwbIllumination((char*)"F2_CWF") == true) {
                 parameterString.append(",");
                 parameterString.append(CameraParameters::WHITE_BALANCE_FLUORESCENT);
             }
     	}
-        
+
     	if(pCamInfo->mSoftInfo.mAwbConfig.mAwbSupport&0x1<<(AWB_WARM_FLUORESCENT_BITPOS)) {
             if (m_camDevice->chkAwbIllumination((char*)"U30") == true) {
                 parameterString.append(",");
@@ -1099,7 +1099,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
             }
 
     	}
-        
+
     	if(pCamInfo->mSoftInfo.mAwbConfig.mAwbSupport&0x1<<(AWB_DAYLIGHT_BITPOS)) {
             if (m_camDevice->chkAwbIllumination((char*)"D65") == true) {
                 parameterString.append(",");
@@ -1127,11 +1127,11 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
                 parameterString.append(CameraParameters::WHITE_BALANCE_TWILIGHT);
             }
     	}
-    
+
         params.set(CameraParameters::KEY_SUPPORTED_WHITE_BALANCE, parameterString.string());
     	params.set(CameraParameters::KEY_WHITE_BALANCE, "auto");
 	}
-    
+
     /*preview format setting*/
     //yuv420p ,forced by cts
     params.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FORMATS, "yuv420sp,yuv420p");
@@ -1147,7 +1147,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
     /*rotation setting*/
     params.set(CameraParameters::KEY_ROTATION, "0");
 
-    /*lzg@rockchip.com :add some settings to pass cts*/	
+    /*lzg@rockchip.com :add some settings to pass cts*/
     /*focus distance setting ,no much meaning ,only for passing cts */
     parameterString = "0.3,50,Infinity";
     params.set(CameraParameters::KEY_FOCUS_DISTANCES, parameterString.string());
@@ -1170,9 +1170,9 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
     parameterString = "160";
     params.set(CameraParameters::KEY_JPEG_THUMBNAIL_WIDTH, parameterString.string());
     parameterString = "128";
-    params.set(CameraParameters::KEY_JPEG_THUMBNAIL_HEIGHT, parameterString.string()); 
+    params.set(CameraParameters::KEY_JPEG_THUMBNAIL_HEIGHT, parameterString.string());
     if(pCamInfo->mSoftInfo.mFaceDetctConfig.mFaceDetectSupport > 0){
-        memset(string,0x00,sizeof(string));    
+        memset(string,0x00,sizeof(string));
     	sprintf(string,"%d",pCamInfo->mSoftInfo.mFaceDetctConfig.mFaceMaxNum);
     	params.set(CameraParameters::KEY_MAX_NUM_DETECTED_FACES_HW,string);
     }else
@@ -1182,7 +1182,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
     params.set(CameraParameters::KEY_VIDEO_SNAPSHOT_SUPPORTED,"true");
     params.set(CameraParameters::KEY_AUTO_WHITEBALANCE_LOCK_SUPPORTED, "false");
     params.set(CameraParameters::KEY_AUTO_EXPOSURE_LOCK_SUPPORTED, "false");
-            
+
     //params.set(CameraParameters::KEY_FOCUS_MODE, CameraParameters::FOCUS_MODE_FIXED);
     //params.set(CameraParameters::KEY_SUPPORTED_FOCUS_MODES,CameraParameters::FOCUS_MODE_FIXED);
 
@@ -1203,12 +1203,12 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
 
         params.set(CameraParameters::KEY_MAX_NUM_METERING_AREAS,"0");
     }
-	
+
 
     //for video test
     params.set(CameraParameters::KEY_PREVIEW_FPS_RANGE, "3000,30000");
     params.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FPS_RANGE, "(3000,30000)");
-    params.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FRAME_RATES, "10,15,30"); 
+    params.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FRAME_RATES, "10,15,30");
     params.setPreviewFrameRate(30);
 
     params.set(KEY_CONTINUOUS_PIC_NUM,"1");
@@ -1226,11 +1226,11 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
     params.set(CameraParameters::KEY_SUPPORTED_EFFECTS, "none,mono,sepia");
     params.set(CameraParameters::KEY_EFFECT, "none");
 
-    LOG1 ("Support Preview format: %s    %s(default)",params.get(CameraParameters::KEY_SUPPORTED_PREVIEW_FORMATS),params.get(CameraParameters::KEY_PREVIEW_FORMAT)); 
+    LOG1 ("Support Preview format: %s    %s(default)",params.get(CameraParameters::KEY_SUPPORTED_PREVIEW_FORMATS),params.get(CameraParameters::KEY_PREVIEW_FORMAT));
 	LOG1 ("Support Preview sizes: %s    %s(default)    %dx%d(force)",params.get(CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES),params.get(CameraParameters::KEY_PREVIEW_SIZE),
         pCamInfo->mSoftInfo.mPreviewWidth,pCamInfo->mSoftInfo.mPreviewHeight);
-	LOG1 ("Support Preview FPS range: %s",params.get(CameraParameters::KEY_SUPPORTED_PREVIEW_FPS_RANGE));   
-	LOG1 ("Support Preview framerate: %s",params.get(CameraParameters::KEY_SUPPORTED_PREVIEW_FRAME_RATES));   
+	LOG1 ("Support Preview FPS range: %s",params.get(CameraParameters::KEY_SUPPORTED_PREVIEW_FPS_RANGE));
+	LOG1 ("Support Preview framerate: %s",params.get(CameraParameters::KEY_SUPPORTED_PREVIEW_FRAME_RATES));
 	LOG1 ("Support Picture sizes: %s    %s(default)",params.get(CameraParameters::KEY_SUPPORTED_PICTURE_SIZES),params.get(CameraParameters::KEY_PICTURE_SIZE));
 	LOG1 ("Support Focus: %s  Focus zone: %s",params.get(CameraParameters::KEY_SUPPORTED_FOCUS_MODES),
         params.get(CameraParameters::KEY_MAX_NUM_FOCUS_AREAS));
@@ -1238,7 +1238,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
     	LOG1 ("Support Flash: %s  Flash: %s",params.get(CameraParameters::KEY_SUPPORTED_FLASH_MODES),
         	params.get(CameraParameters::KEY_FLASH_MODE));
     LOG1 ("Support AWB: %s ",params.get(CameraParameters::KEY_SUPPORTED_WHITE_BALANCE));
-	
+
 	LOG1("Support FOV test h(%f) v(%f)\n", pCamInfo->mHardInfo.mSensorInfo.fov_h,pCamInfo->mHardInfo.mSensorInfo.fov_v);
 
 	cameraConfig(params,true,isRestartPreview);
@@ -1249,15 +1249,15 @@ int CameraIspAdapter::cameraConfig(const CameraParameters &tmpparams,bool isInit
 {
 	int err = 0, i = 0;
 	CameraParameters params = tmpparams;
-	
+
     /*white balance setting*/
     const char *white_balance = params.get(CameraParameters::KEY_WHITE_BALANCE);
 	const char *mwhite_balance = mParameters.get(CameraParameters::KEY_WHITE_BALANCE);
-	if (params.get(CameraParameters::KEY_SUPPORTED_WHITE_BALANCE)) {	
+	if (params.get(CameraParameters::KEY_SUPPORTED_WHITE_BALANCE)) {
 		if ( !mwhite_balance || strcmp(white_balance, mwhite_balance) ){
 			if(!isInit) {
 				char prfName[10];
-				uint32_t illu_index = 1; 
+				uint32_t illu_index = 1;
 				if(!strcmp(white_balance, "auto")) {
                     if (m_camDevice->isSOCSensor() == false) {
     					m_camDevice->stopAwb();
@@ -1271,7 +1271,7 @@ int CameraIspAdapter::cameraConfig(const CameraParameters &tmpparams,bool isInit
     					if(!strcmp(white_balance, CameraParameters::WHITE_BALANCE_INCANDESCENT)) {
     						strcpy(prfName, "A");
     					} else if(!strcmp(white_balance, CameraParameters::WHITE_BALANCE_DAYLIGHT)) {
-    						strcpy(prfName, "D65");			
+    						strcpy(prfName, "D65");
     					} else if(!strcmp(white_balance, CameraParameters::WHITE_BALANCE_FLUORESCENT)) {
     						strcpy(prfName, "F2_CWF");
     					} else if(!strcmp(white_balance, CameraParameters::WHITE_BALANCE_SHADE)) {
@@ -1296,7 +1296,7 @@ int CameraIspAdapter::cameraConfig(const CameraParameters &tmpparams,bool isInit
 								break;
 							}
     					}
-    					
+
 		                m_camDevice->stopAwb();
     					m_camDevice->startAwb(CAM_ENGINE_AWB_MODE_MANUAL, illu_index, (bool_t)true);
 				    }
@@ -1314,23 +1314,23 @@ int CameraIspAdapter::cameraConfig(const CameraParameters &tmpparams,bool isInit
         if((zoom != mzoom) && (!isInit)){
             CamEnginePathConfig_t pathConfig;
             mZoomVal = zoom*mZoomStep+mZoomMin;
-            #if (USE_RGA_TODO_ZOOM == 0)          /* zyc@rock-chips.com: v0.0x22.0 */ 
+            #if (USE_RGA_TODO_ZOOM == 0)          /* zyc@rock-chips.com: v0.0x22.0 */
             setupPreview(mCamDrvWidth,mCamDrvHeight,mCamPreviewW, mCamPreviewH, mZoomVal);
             m_camDevice->getPathConfig(CHAIN_MASTER,CAM_ENGINE_PATH_MAIN,pathConfig);
             m_camDevice->reSetMainPathWhileStreaming(&pathConfig.dcWin,pathConfig.width,pathConfig.height);
             #endif
 
         }
-        
+
 	}
-	
+
     /*color effect setting*/
     const char *effect = params.get(CameraParameters::KEY_EFFECT);
 	const char *meffect = mParameters.get(CameraParameters::KEY_EFFECT);
 	if (params.get(CameraParameters::KEY_SUPPORTED_EFFECTS)) {
 		//TODO
 	}
-	
+
     /*anti-banding setting*/
     const char *anti_banding = params.get(CameraParameters::KEY_ANTIBANDING);
 	const char *manti_banding = mParameters.get(CameraParameters::KEY_ANTIBANDING);
@@ -1339,7 +1339,7 @@ int CameraIspAdapter::cameraConfig(const CameraParameters &tmpparams,bool isInit
 			//TODO
 		}
 	}
-	
+
 	/*scene setting*/
     const char *scene = params.get(CameraParameters::KEY_SCENE_MODE);
 	const char *mscene = mParameters.get(CameraParameters::KEY_SCENE_MODE);
@@ -1348,7 +1348,7 @@ int CameraIspAdapter::cameraConfig(const CameraParameters &tmpparams,bool isInit
 			//TODO
 		}
 	}
-	
+
     /*focus setting*/
     const char *focusMode = params.get(CameraParameters::KEY_FOCUS_MODE);
 	const char *mfocusMode = mParameters.get(CameraParameters::KEY_FOCUS_MODE);
@@ -1363,21 +1363,21 @@ int CameraIspAdapter::cameraConfig(const CameraParameters &tmpparams,bool isInit
 	} else{
 		params.set(CameraParameters::KEY_FOCUS_MODE,(mfocusMode?mfocusMode:CameraParameters::FOCUS_MODE_FIXED));
 	}
-	
+
 	/*flash mode setting*/
     const char *flashMode = params.get(CameraParameters::KEY_FLASH_MODE);
 	const char *mflashMode = mParameters.get(CameraParameters::KEY_FLASH_MODE);
-	
+
 	if (params.get(CameraParameters::KEY_SUPPORTED_FLASH_MODES)) {
 		if ( !mflashMode || strcmp(flashMode, mflashMode) ) {
 			//TODO
 		}
 	}
-    
+
     /*exposure setting*/
 	const char *exposure = params.get(CameraParameters::KEY_EXPOSURE_COMPENSATION);
     const char *mexposure = mParameters.get(CameraParameters::KEY_EXPOSURE_COMPENSATION);
-    
+
 	if (strcmp("0", params.get(CameraParameters::KEY_MAX_EXPOSURE_COMPENSATION))
 		|| strcmp("0", params.get(CameraParameters::KEY_MIN_EXPOSURE_COMPENSATION))) {
 	    if (!mexposure || (exposure && strcmp(exposure,mexposure))) {
@@ -1392,14 +1392,14 @@ int CameraIspAdapter::cameraConfig(const CameraParameters &tmpparams,bool isInit
     				manExpConfig.plus_level_1 = (manExpConfig.level_0/(1-tolerance))+manExpConfig.clmtolerance*1.5;
     				manExpConfig.plus_level_2 = (manExpConfig.plus_level_1/(1-tolerance))+manExpConfig.clmtolerance*1.5;
     				manExpConfig.plus_level_3 = (manExpConfig.plus_level_2/(1-tolerance))+manExpConfig.clmtolerance*1.5;
-    				
+
     				manExpConfig.minus_level_1 = (manExpConfig.level_0/(1+tolerance))-manExpConfig.clmtolerance*1.5;
     				if(manExpConfig.minus_level_1 < 0)
     					manExpConfig.minus_level_1 = 0;
     				manExpConfig.minus_level_2 = (manExpConfig.minus_level_1/(1+tolerance))-manExpConfig.clmtolerance*1.5;
     				if(manExpConfig.minus_level_2 < 0)
-    					manExpConfig.minus_level_2 = 0;				
-    				manExpConfig.minus_level_3 = (manExpConfig.minus_level_2/(1+tolerance))-manExpConfig.clmtolerance*1.5;	
+    					manExpConfig.minus_level_2 = 0;
+    				manExpConfig.minus_level_3 = (manExpConfig.minus_level_2/(1+tolerance))-manExpConfig.clmtolerance*1.5;
     				if(manExpConfig.minus_level_3 < 0)
     					manExpConfig.minus_level_3 = 0;
     				LOG1("Exposure Compensation ae point:\n");
@@ -1449,7 +1449,7 @@ int CameraIspAdapter::cameraConfig(const CameraParameters &tmpparams,bool isInit
     			}
             }
 	    }
-	}    
+	}
 
 	mParameters = params;
 	//changeVideoPreviewSize();
@@ -1462,7 +1462,7 @@ status_t CameraIspAdapter::autoFocus()
 {
     bool shot = false,err_af = false;
     CamEngineWindow_t afWin;
-#if 1    
+#if 1
     char prop_value[PROPERTY_VALUE_MAX];
     property_get("sys.cts_gts.status",prop_value, "false");
     if(!strcmp(prop_value,"true")){
@@ -1473,17 +1473,17 @@ status_t CameraIspAdapter::autoFocus()
         if (mAfChk == false) {
             LOG1("Focus mode is Auto and areas not change, CheckAfShot!");
             if (m_camDevice->checkAfShot(&shot) == false) {
-                shot = true;    
+                shot = true;
             }
         } else {
             LOG1("Focus mode is Auto, but areas have changed, Must AfShot!");
             shot = true;
         }
-        
+
     } else if (strcmp(mParameters.get(CameraParameters::KEY_FOCUS_MODE), CameraParameters::FOCUS_MODE_CONTINUOUS_PICTURE) == 0) {
         LOG1("Focus mode is continues, checkAfShot!");
         if (m_camDevice->checkAfShot(&shot) == false) {
-            shot = true;    
+            shot = true;
         }
     }
 
@@ -1495,18 +1495,18 @@ status_t CameraIspAdapter::autoFocus()
             if (mParameters.getInt(CameraParameters::KEY_MAX_NUM_FOCUS_AREAS) > 0) {
     	    	int hOff,vOff,w,h;
     			const char* zoneStr = mParameters.get(CameraParameters::KEY_FOCUS_AREAS);
-    	    	if (zoneStr) {        			
+    	    	if (zoneStr) {
         	        hOff = strtol(zoneStr+1,0,0);
         	        zoneStr = strstr(zoneStr,",");
         	        vOff = strtol(zoneStr+1,0,0);
         		    zoneStr = strstr(zoneStr+1,",");
-        	        w = strtol(zoneStr+1,0,0);                    
+        	        w = strtol(zoneStr+1,0,0);
                     zoneStr = strstr(zoneStr+1,",");
         	        h = strtol(zoneStr+1,0,0);
 
                     w -= hOff;
-                    h -= vOff;                    
-                    
+                    h -= vOff;
+
                     if ( ((hOff<-1000) || (hOff>1000)) ||
                          ((vOff<-1000) || (vOff>1000)) ||
                          ((w<=0) || (w>2000)) ||
@@ -1514,7 +1514,7 @@ status_t CameraIspAdapter::autoFocus()
                         LOGE("%s: %s , afWin(%d,%d,%d,%d)is invalidate!",
                             CameraParameters::KEY_FOCUS_AREAS,
                             mParameters.get(CameraParameters::KEY_FOCUS_AREAS),
-                            hOff,vOff,w,h);                            
+                            hOff,vOff,w,h);
                         vOff = 0;
                         hOff = 0;
                         w = 0;
@@ -1524,29 +1524,29 @@ status_t CameraIspAdapter::autoFocus()
     	    	}
             }
         }
-        
+
         err_af = m_camDevice->startAfOneShot(CAM_ENGINE_AUTOFOCUS_SEARCH_ALGORITHM_ADAPTIVE_RANGE);
     	if ( err_af == false ){
-    		TRACE_E("Trigger a single auto focus failed!");  
+    		TRACE_E("Trigger a single auto focus failed!");
             goto finish_focus;  /* ddl@rock-chips.com: v0.0x27.0 */
     	} else {
             LOG1("Trigger a single auto focus success");
     	}
     } else {
 
-finish_focus:    
+finish_focus:
         LOG1("It has been focused!");
 
         CamEngineAfEvt_t evnt;
         int32_t err, times;
-        
+
         evnt.evnt_id = CAM_ENGINE_AUTOFOCUS_FINISHED;
         evnt.info.fshEvt.focus = BOOL_TRUE;
 
         err = osQueueTryWrite(&mAfListenerQue.queue, &evnt);
         if (err != OSLAYER_OK) {
             times = 0;
-            do 
+            do
             {
                 times++;
                 err = osQueueTryRead(&mAfListenerQue.queue, &evnt);
@@ -1562,18 +1562,18 @@ finish_focus:
             }
         }
     }
-	 
+
     return 0;
 }
 
 
 status_t CameraIspAdapter::cancelAutoFocus()
-{  
+{
     /* ddl@rock-chips.com: v0.0x27.0 */
     if (strcmp(mParameters.get(CameraParameters::KEY_FOCUS_MODE), CameraParameters::FOCUS_MODE_AUTO) == 0) {
-        m_camDevice->stopAf();    
+        m_camDevice->stopAf();
     }
-    
+
     return 0;
 }
 
@@ -1603,9 +1603,9 @@ void CameraIspAdapter::setSensorItf(int newSensorItf)
             m_camDevice->setSensorItf( newSensorItf );
              mSensorItfCur = newSensorItf;
             loadSensor( mCamId);
-           
+
         }
-        
+
     }
 }
 void CameraIspAdapter::enableAfps( bool enable )
@@ -1637,7 +1637,7 @@ void CameraIspAdapter::openImage( const char* fileName)
         if (true == m_camDevice->openImage(fileName,image,NULL,NULL,NULL,NULL,1.0,1.0))
         {
             //set scenario mode
-            CamEngineModeType_t mode1 = CAM_ENGINE_MODE_IMAGE_PROCESSING; 
+            CamEngineModeType_t mode1 = CAM_ENGINE_MODE_IMAGE_PROCESSING;
 
             m_camDevice->setScenarioMode( mode1 );
             // connect
@@ -1647,15 +1647,15 @@ void CameraIspAdapter::openImage( const char* fileName)
         }else{
             LOGE("failed!");
         }
-        
+
         if(image.Data.raw.pBuffer)
             free(image.Data.raw.pBuffer);
 
 
-        
+
     }
 
-    
+
 }
 void CameraIspAdapter::loadSensor( const int cameraId)
 {
@@ -1681,8 +1681,8 @@ void CameraIspAdapter::loadSensor( const int cameraId)
             resReq.request_fps = 15;
             resReq.requset_aspect = (bool_t)false;
             resReq.request_fullfov = (bool_t)mImgAllFovReq;
-            m_camDevice->getPreferedSensorRes(&resReq);            
-           
+            m_camDevice->getPreferedSensorRes(&resReq);
+
             m_camDevice->setSensorResConfig(resReq.resolution);
             setupPreview(mCamDrvWidth,mCamDrvHeight,DEFAULTPREVIEWWIDTH,DEFAULTPREVIEWHEIGHT,mZoomVal);
             connectCamera();
@@ -1753,7 +1753,7 @@ bool CameraIspAdapter::connectCamera(){
             CAM_ENGINE_GAMMAOUT_XSCALE_EQU,
             {0}
         };
-        
+
         for(int i = 0;i < (CAMERIC_ISP_GAMMA_CURVE_SIZE);i++){
             tmp_gamma = (int)((pow((64*i/maxval),gamma))*1024)+offset;
             tmp_gamma = (tmp_gamma > 1023)?1023:tmp_gamma;
@@ -1774,9 +1774,9 @@ void CameraIspAdapter::disconnectCamera()
     unsigned int maxFocus, minFocus;
 
     if (mISPTunningRun == false) {
-    
+
         m_camDevice->stopAf();  /* ddl@rock-chips.com: v0.d.1 */
-        
+
         if (m_camDevice->getFocusLimits(minFocus, maxFocus) == true) {
             m_camDevice->setFocus(maxFocus);
             usleep(100000);
@@ -1795,7 +1795,7 @@ void CameraIspAdapter::disconnectCamera()
         if(running)
             m_camDevice->cProcDisable();
     }
-    
+
     m_camDevice->disconnectCamera();
 }
 
@@ -1855,7 +1855,7 @@ int CameraIspAdapter::stop()
 
     if ( true == m_camDevice->stopPreview() )
     {
-    
+
         LOGD("m_camDevice->stopPreview success!");
 		return 0;
     }
@@ -1899,7 +1899,7 @@ void CameraIspAdapter::clearFrameArray(){
             mFrameInfoArray.removeItem((void*)tmpFrame);
             free(tmpFrame);
             //unlock
-            
+
             MediaBufUnlockBuffer( pMediaBuffer );
         }
     }
@@ -1914,7 +1914,7 @@ int CameraIspAdapter::adapterReturnFrame(long index,int cmd){
             LOGE("this frame is not in frame array,used_flag is %d!",tmpFrame->used_flag);
         }else{
             MediaBuffer_t *pMediaBuffer = (MediaBuffer_t *)mFrameInfoArray.valueFor((void*)tmpFrame);
-            {	
+            {
                 switch (tmpFrame->used_flag){
                     case 0:
                         mDispFrameLeak--;
@@ -1934,7 +1934,7 @@ int CameraIspAdapter::adapterReturnFrame(long index,int cmd){
                 //remove item
                 mFrameInfoArray.removeItem((void*)tmpFrame);
                 free(tmpFrame);
-                
+
                 //unlock
                 MediaBufUnlockBuffer( pMediaBuffer );
             }
@@ -1992,10 +1992,10 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
     HalHandle_t  tmpHandle = m_camDevice->getHalHandle();
 
     //debugShowFPS();
-    
+
     //
 	bDataReced = true;
-    if(pPicBufMetaData->Type == PIC_BUF_TYPE_YCbCr420 || pPicBufMetaData->Type == PIC_BUF_TYPE_YCbCr422){        
+    if(pPicBufMetaData->Type == PIC_BUF_TYPE_YCbCr420 || pPicBufMetaData->Type == PIC_BUF_TYPE_YCbCr422){
         if(pPicBufMetaData->Type == PIC_BUF_TYPE_YCbCr420){
             fmt = V4L2_PIX_FMT_NV12;
         }else{
@@ -2015,13 +2015,13 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
                 HalGetMemoryMapFd(tmpHandle, y_addr,(int*)&phy_addr);
             else
                 phy_addr = y_addr;
-            
+
             /* ddl@rock-chips.com:  v1.3.0 */
             y_size = pPicBufMetaData->Data.YCbCr.semiplanar.Y.PicWidthPixel*pPicBufMetaData->Data.YCbCr.semiplanar.Y.PicHeightPixel;
             if (uv_addr > (y_addr+y_size)) {
                 memcpy((void*)((ulong_t)y_addr_vir+y_size),uv_addr_vir, y_size/2);
             }
-            
+
         }else if(pPicBufMetaData->Layout == PIC_BUF_LAYOUT_COMBINED){
             y_addr = (ulong_t)(pPicBufMetaData->Data.YCbCr.combined.pBuffer );
             width = pPicBufMetaData->Data.YCbCr.combined.PicWidthPixel>>1;
@@ -2048,12 +2048,12 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
         LOGE("not support this type(%dx%d)  ,just support  yuv20 now",width,height);
         return ;
     }
-    
+
 
     if ( pMediaBuffer->pNext != NULL ) {
         MediaBufLockBuffer( (MediaBuffer_t*)pMediaBuffer->pNext );
     }
-	
+
 #if 1
     char prop_value[PROPERTY_VALUE_MAX];
     property_get("sys.cts_gts.status",prop_value, "false");
@@ -2064,7 +2064,7 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
         if(m_camDevice->isSOCSensor() == false){
 			bool awb_ret = m_camDevice->isAwbStable();
 			LOG1("awb test fps(%d) awb stable(%d)\n", preview_frame_inval, awb_ret);
-			
+
 			if( awb_ret!=true){
 				LOG1("awb test fps(%d) awb stable(%d)\n", preview_frame_inval, awb_ret);
 				goto end;
@@ -2087,7 +2087,7 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
             return;
         }
         //add to vector
-        tmpFrame->frame_index = (ulong_t)tmpFrame; 
+        tmpFrame->frame_index = (ulong_t)tmpFrame;
         tmpFrame->phy_addr = (ulong_t)phy_addr;
         tmpFrame->frame_width = width;
         tmpFrame->frame_height= height;
@@ -2107,7 +2107,7 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
 
     }else{
         //need to send face detection ?
-    	if(mRefEventNotifier->isNeedSendToFaceDetect()){  
+    	if(mRefEventNotifier->isNeedSendToFaceDetect()){
     	    MediaBufLockBuffer( pMediaBuffer );
     		//new frames
     		FramInfo_s *tmpFrame=(FramInfo_s *)malloc(sizeof(FramInfo_s));
@@ -2116,17 +2116,17 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
     			return;
           }
           //add to vector
-          tmpFrame->frame_index = (ulong_t)tmpFrame; 
+          tmpFrame->frame_index = (ulong_t)tmpFrame;
           tmpFrame->phy_addr = (ulong_t)phy_addr;
           tmpFrame->frame_width = width;
           tmpFrame->frame_height= height;
           tmpFrame->vir_addr = (ulong_t)y_addr_vir;
           tmpFrame->frame_fmt = fmt;
-    	  
+
           tmpFrame->used_flag = 4;
 
           tmpFrame->zoom_value = mZoomVal;
-        
+
           {
             Mutex::Autolock lock(mFrameArrayLock);
             mFrameInfoArray.add((void*)tmpFrame,(void*)pMediaBuffer);
@@ -2145,16 +2145,16 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
     			return;
           }
           //add to vector
-          tmpFrame->frame_index = (ulong_t)tmpFrame; 
+          tmpFrame->frame_index = (ulong_t)tmpFrame;
           tmpFrame->phy_addr = (ulong_t)phy_addr;
           tmpFrame->frame_width = width;
           tmpFrame->frame_height= height;
           tmpFrame->vir_addr = (ulong_t)y_addr_vir;
           tmpFrame->frame_fmt = fmt;
-    	  
+
           tmpFrame->used_flag = 0;
 
-          #if (USE_RGA_TODO_ZOOM == 1)  
+          #if (USE_RGA_TODO_ZOOM == 1)
              tmpFrame->zoom_value = mZoomVal;
           #else
           if((tmpFrame->frame_width > 2592) && (tmpFrame->frame_height > 1944) && (mZoomVal != 100) ){
@@ -2162,7 +2162,7 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
           }else
              tmpFrame->zoom_value = 100;
           #endif
-        
+
           {
             Mutex::Autolock lock(mFrameArrayLock);
             mFrameInfoArray.add((void*)tmpFrame,(void*)pMediaBuffer);
@@ -2181,16 +2181,16 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
             if(!tmpFrame){
             	MediaBufUnlockBuffer( pMediaBuffer );
             	return;
-            }          
+            }
             //add to vector
-            tmpFrame->frame_index = (ulong_t)tmpFrame; 
+            tmpFrame->frame_index = (ulong_t)tmpFrame;
             tmpFrame->phy_addr = (ulong_t)phy_addr;
             tmpFrame->frame_width = width;
             tmpFrame->frame_height= height;
             tmpFrame->vir_addr = (ulong_t)y_addr_vir;
             tmpFrame->frame_fmt = fmt;
             tmpFrame->used_flag = 1;
-#if (USE_RGA_TODO_ZOOM == 1)  
+#if (USE_RGA_TODO_ZOOM == 1)
             tmpFrame->zoom_value = mZoomVal;
 #else
             if((tmpFrame->frame_width > 2592) && (tmpFrame->frame_height > 1944) && (mZoomVal != 100) ) {
@@ -2199,15 +2199,15 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
                 tmpFrame->zoom_value = 100;
             }
 #endif
-          
+
             {
                 Mutex::Autolock lock(mFrameArrayLock);
                 mFrameInfoArray.add((void*)tmpFrame,(void*)pMediaBuffer);
                 mVideoEncFrameLeak++;
             }
-            mRefEventNotifier->notifyNewVideoFrame(tmpFrame);		
+            mRefEventNotifier->notifyNewVideoFrame(tmpFrame);
     	}
-        
+
     	//picture ?
     	if(mRefEventNotifier->isNeedSendToPicture()){
             bool send_to_pic = true;
@@ -2216,7 +2216,7 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
                 send_to_pic = false;
                 LOG1("not the desired flash pic,skip it,mFlashStatus %d!",mFlashStatus);
             }
-            if (send_to_pic) { 
+            if (send_to_pic) {
                 MediaBufLockBuffer( pMediaBuffer );
                 //new frames
                 FramInfo_s *tmpFrame=(FramInfo_s *)malloc(sizeof(FramInfo_s));
@@ -2226,7 +2226,7 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
                 }
 
                 //add to vector
-                tmpFrame->frame_index = (ulong_t)tmpFrame; 
+                tmpFrame->frame_index = (ulong_t)tmpFrame;
                 tmpFrame->phy_addr = (ulong_t)phy_addr;
                 tmpFrame->frame_width = width;
                 tmpFrame->frame_height= height;
@@ -2234,7 +2234,7 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
                 tmpFrame->frame_fmt = fmt;
                 tmpFrame->used_flag = 2;
                 tmpFrame->res = &mImgAllFovReq;
-#if (USE_RGA_TODO_ZOOM == 1)  
+#if (USE_RGA_TODO_ZOOM == 1)
                 tmpFrame->zoom_value = mZoomVal;
 #else
                 if((tmpFrame->frame_width > 2592) && (tmpFrame->frame_height > 1944) && (mZoomVal != 100) ){
@@ -2251,7 +2251,7 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
                 }
                 picture_info_s &picinfo = mRefEventNotifier->getPictureInfoRef();
                 getCameraParamInfo(picinfo.cameraparam);
-                mRefEventNotifier->notifyNewPicFrame(tmpFrame);	
+                mRefEventNotifier->notifyNewPicFrame(tmpFrame);
             }
     	}
 
@@ -2265,14 +2265,14 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
             	return;
             }
             //add to vector
-            tmpFrame->frame_index = (ulong_t)tmpFrame; 
+            tmpFrame->frame_index = (ulong_t)tmpFrame;
             tmpFrame->phy_addr = (ulong_t)phy_addr;
             tmpFrame->frame_width = width;
             tmpFrame->frame_height= height;
             tmpFrame->vir_addr = (ulong_t)y_addr_vir;
             tmpFrame->frame_fmt = fmt;
             tmpFrame->used_flag = 3;
-#if (USE_RGA_TODO_ZOOM == 1)  
+#if (USE_RGA_TODO_ZOOM == 1)
             tmpFrame->zoom_value = mZoomVal;
 #else
             if((tmpFrame->frame_width > 2592) && (tmpFrame->frame_height > 1944) && (mZoomVal != 100) ) {
@@ -2287,11 +2287,11 @@ void CameraIspAdapter::bufferCb( MediaBuffer_t* pMediaBuffer )
                 mFrameInfoArray.add((void*)tmpFrame,(void*)pMediaBuffer);
                 mPreviewCBFrameLeak++;
             }
-                mRefEventNotifier->notifyNewPreviewCbFrame(tmpFrame);			
+                mRefEventNotifier->notifyNewPreviewCbFrame(tmpFrame);
         }
     }
 end:
-	
+
 	tem_val =0 ;
 }
 
@@ -2340,14 +2340,14 @@ int CameraIspAdapter::hdmiinListenerThread(void)
 	while(hdmiIn_Exit == false){
 		usleep(2000000);
 		if(1){
-			rk_cam_total_info *pCamInfo = gCamInfos[mCamId].pcam_total_info;
-			bool res = m_camDevice->checkHdmiInRes(pCamInfo);
+			// rk_cam_total_info *pCamInfo = gCamInfos[mCamId].pcam_total_info;
+			// bool res = m_camDevice->checkHdmiInRes(pCamInfo);
 					//if(res!=true)
 					    //return;
 		}
 	}
 	LOG_FUNCTION_NAME_EXIT
-    return 0;	
+    return 0;
 }
 
 int CameraIspAdapter::dataListenerThread(void)
@@ -2376,7 +2376,7 @@ int CameraIspAdapter::dataListenerThread(void)
        usleep(100000);
        msecs += 100;
    }
- 
+
    LOG_FUNCTION_NAME_EXIT
 
     return 0;
@@ -2388,20 +2388,20 @@ int CameraIspAdapter::afListenerThread(void)
     LOG_FUNCTION_NAME
 
     bool bExit = false;
-    int evnt_id ;
+    long long evnt_id ;
 
     while (bExit == false)
     {
-        CamEngineAfEvt_t afEvt;        
-        
-        OSLAYER_STATUS osStatus = (OSLAYER_STATUS)osQueueRead(&mAfListenerQue.queue, &afEvt); 
+        CamEngineAfEvt_t afEvt;
+
+        OSLAYER_STATUS osStatus = (OSLAYER_STATUS)osQueueRead(&mAfListenerQue.queue, &afEvt);
         if (OSLAYER_OK != osStatus)
         {
             LOGE( "receiving af event failed -> OSLAYER_RESULT=%d\n", osStatus );
             continue; /* for now we simply try again */
         }
 
-        evnt_id = (int)afEvt.evnt_id;
+        evnt_id = (long long)afEvt.evnt_id;
         switch (evnt_id)
         {
             case CAM_ENGINE_AUTOFOCUS_MOVE:
@@ -2425,7 +2425,7 @@ int CameraIspAdapter::afListenerThread(void)
                 break;
             }
             default:
-            {                    
+            {
                 LOGE("afEvt.evnt_id: 0x%x is invalidate!",afEvt.evnt_id);
                 break;
             }
@@ -2438,7 +2438,7 @@ int CameraIspAdapter::afListenerThread(void)
 }
 
 bool CameraIspAdapter::isNeedToEnableFlash()
-{	
+{
 
     if(mParameters.get(CameraParameters::KEY_SUPPORTED_FLASH_MODES)
         && ((strcmp(mParameters.get(CameraParameters::KEY_FLASH_MODE),CameraParameters::FLASH_MODE_ON)==0) ||
@@ -2455,14 +2455,14 @@ bool CameraIspAdapter::isLowIllumin()
     CamEngineAfSearchAlgorithm_t searchAlgorithm;
     const float lumaThreshold = 45;
     const float sharpThreshold = 300;
-    
+
     m_camDevice->getGain(gain);
     m_camDevice->getIntegrationTime(time);
     m_camDevice->getGainLimits(mingain,maxgain,step);
     m_camDevice->getIntegrationTimeLimits(mintime,maxtime,step);
     meanluma = m_camDevice->getAecMeanLuminance();
 
-    m_camDevice->getAfStatus(enabled,searchAlgorithm,&sharpness);  /* ddl@rock-chips.com: v0.0x32.0 */     
+    m_camDevice->getAfStatus(enabled,searchAlgorithm,&sharpness);  /* ddl@rock-chips.com: v0.0x32.0 */
 
     LOG1("Check LowIllumin :")
     LOG1("    gain       %f(%f,%f)",gain,mingain,maxgain);
@@ -2513,7 +2513,7 @@ void CameraIspAdapter::flashControl(bool on)
 //     m_camDevice->stopAvs();
 //     m_camDevice->stopAdpcc();
 //     m_camDevice->stopAdpf();
-       
+
 //     m_camDevice->stopAwb();
 //       //set D65 manual awb
 //     m_camDevice->startAwb(CAM_ENGINE_AWB_MODE_MANUAL, 1, (bool_t)false);
@@ -2528,13 +2528,13 @@ void CameraIspAdapter::flashControl(bool on)
 
 void CameraIspAdapter::getCameraParamInfo(cameraparam_info_s &paraminfo)
 {
-	
+
 	m_camDevice->getAwbGainInfo(&paraminfo.f_RgProj,&paraminfo.f_s,&paraminfo.f_s_Max1,&paraminfo.f_s_Max2,
 								&paraminfo.f_Bg1,&paraminfo.f_Rg1,&paraminfo.f_Bg2,&paraminfo.f_Rg2);
 
 	m_camDevice->getIlluEstInfo(&paraminfo.expPriorIn,&paraminfo.expPriorOut,paraminfo.illuName,paraminfo.likehood,
 								paraminfo.wight,&paraminfo.illuIdx,&paraminfo.region,&paraminfo.count);
-	
+
 	m_camDevice->getIntegrationTime(paraminfo.ExposureTime);
 	m_camDevice->getGain(paraminfo.ISOSpeedRatings);
 	m_camDevice->getSensorXmlVersion(&paraminfo.XMLVersion);
@@ -2547,7 +2547,7 @@ bool CameraIspAdapter::getFlashStatus()
 
 void CameraIspAdapter::getSensorMaxRes(unsigned int &max_w, unsigned int &max_h)
 {
-	IsiSensorCaps_t pCaps;		
+	IsiSensorCaps_t pCaps;
 	pCaps.Index = 0;
 	max_w = 0;
 	max_h = 0;
@@ -2570,7 +2570,7 @@ void CameraIspAdapter::setMwb(const char *white_balance)
 
 	if(white_balance == NULL)
 		return;
-	
+
 	if(!strcmp(white_balance, "auto")) {
 		//do nothing
 	}else{
@@ -2578,7 +2578,7 @@ void CameraIspAdapter::setMwb(const char *white_balance)
 			if(!strcmp(white_balance, CameraParameters::WHITE_BALANCE_INCANDESCENT)) {
 				strcpy(prfName, "A");
 			} else if(!strcmp(white_balance, CameraParameters::WHITE_BALANCE_DAYLIGHT)) {
-				strcpy(prfName, "D65");	
+				strcpy(prfName, "D65");
 			} else if(!strcmp(white_balance, CameraParameters::WHITE_BALANCE_FLUORESCENT)) {
 				strcpy(prfName, "F2_CWF");
 			} else if(!strcmp(white_balance, CameraParameters::WHITE_BALANCE_SHADE)) {
@@ -2590,8 +2590,8 @@ void CameraIspAdapter::setMwb(const char *white_balance)
 			} else if(!strcmp(white_balance, CameraParameters::WHITE_BALANCE_WARM_FLUORESCENT)) {
 				strcpy(prfName, "U30");
 			}
-			
-			m_camDevice->getIlluminationProfiles( profiles );			
+
+			m_camDevice->getIlluminationProfiles( profiles );
 			size = profiles.size();
 			for(i=0; i<size; i++)
 			{
@@ -2601,7 +2601,7 @@ void CameraIspAdapter::setMwb(const char *white_balance)
 					break;
 				}
 			}
-			
+
 	        m_camDevice->stopAwb();
 			m_camDevice->startAwb(CAM_ENGINE_AWB_MODE_MANUAL, illu_index, (bool_t)true);
 	    }
@@ -2611,9 +2611,9 @@ void CameraIspAdapter::setMwb(const char *white_balance)
 void CameraIspAdapter::setMe(const char *exposure)
 {
     #if 1
-    if (m_camDevice->isSOCSensor() == true)   /* ddl@rock-chips.com : v0.0x39.0 */ 
+    if (m_camDevice->isSOCSensor() == true)   /* ddl@rock-chips.com : v0.0x39.0 */
         return;
-    
+
 	if(exposure == NULL)
 		return;
 	if(!strcmp(exposure, "-2")){
@@ -2676,8 +2676,8 @@ PROCESS_CMD:
                 } else {
                     LOGE("this format %d is not support",curTuneTask->mTuneFmt);
                 }
-                    
-                
+
+
                 startPreview(curPreW, curPreH, curPreW, curPreH,curFmt, false);
 
                 // need to do following steps in RAW capture mode ?
@@ -2693,7 +2693,7 @@ PROCESS_CMD:
                 m_camDevice->gamCorrectDisable();
                 m_camDevice->stopAf();
 
-                if(curTuneTask->mDpccEnable == true) 
+                if(curTuneTask->mDpccEnable == true)
                     m_camDevice->startAdpcc();
                 if(curTuneTask->mLscEnable == true)
                    m_camDevice->lscEnable();
@@ -2714,7 +2714,7 @@ PROCESS_CMD:
                     LOGD("setIntegrationTime(desired:%0.3f,real:%0.3f)",curTuneTask->mExpose.integrationTime,settime);
                     m_camDevice->setGain(curTuneTask->mExpose.gain,setgain);
                     LOGD("setGain(desired:%0.3f,real:%0.3f)",curTuneTask->mExpose.gain,setgain);
-                    
+
                     mIspTunningTask->mCurGain = setgain;
                     mIspTunningTask->mCurIntegrationTime = settime;
                     if(curTuneTask->mExpose.aeRound == true){
@@ -2727,7 +2727,7 @@ PROCESS_CMD:
                         m_camDevice->setGain(gain,setgain);
                         m_camDevice->setIntegrationTime(time,settime);
                     }
-                   
+
                 }
 
                 if(curTuneTask->mWhiteBalance.whiteBalanceMode == WHITEBALANCE_MODE_AUTO){
@@ -2780,7 +2780,7 @@ PROCESS_CMD:
                     }else{
                         LOGE("not support this cc_offset %s !!!",curTuneTask->mWhiteBalance.cc_offset);
                     }
-                
+
                 }
 
                 #if 1
@@ -2791,9 +2791,9 @@ PROCESS_CMD:
                     m_camDevice->startAfOneShot(CAM_ENGINE_AUTOFOCUS_SEARCH_ALGORITHM_ADAPTIVE_RANGE);
                     sleep(1);
                 }
-                #endif   
+                #endif
                 skip_frames = 15;
-                
+
                 mIsSendToTunningTh = true;
                 break;
             case ISP_TUNNING_CMD_EXIT:
@@ -2841,7 +2841,7 @@ PROCESS_CMD:
                                 }
                             }else
                                 newgain = mIspTunningTask->mCurGain;
-                                
+
                             if(isSetExp){
                                 m_camDevice->setIntegrationTime(newtime,settime);
                                 m_camDevice->setGain(newgain,setgain);
@@ -2854,11 +2854,11 @@ PROCESS_CMD:
                                 skip_frames = 12;
                             }
                             int filter_result = mIspTunningTask->ispTuneDesiredExp(frame->vir_addr, frame->frame_width,frame->frame_height,
-                                    curTuneTask->mExpose.minRaw, curTuneTask->mExpose.maxRaw, curTuneTask->mExpose.threshold); 
+                                    curTuneTask->mExpose.minRaw, curTuneTask->mExpose.maxRaw, curTuneTask->mExpose.threshold);
                             if(filter_result & 0x1){
 
                                 goto PROCESS_OVER;
-                            }else if(filter_result & 0x2){  
+                            }else if(filter_result & 0x2){
                                 LOGD("frame is overhead exposure , finish capture frame !!");
                                // curTuneTask->mTunePicNum = 0;
                                 goto PROCESS_OVER;
@@ -2884,15 +2884,15 @@ PROCESS_CMD:
                             if(mIspTunningTask->mCurAeRoundNum < (-(curTuneTask->mExpose.number+3))){
                                 curTuneTask->mTunePicNum = 0;
                             }
-                                
+
                         }
                     }
-                    
+
                 }
 
                 curTuneTask->mTunePicNum--;
                 //generate base file name
-                    
+
                 snprintf( szBaseFileName, sizeof(szBaseFileName)-1, "%st%0.3f_g%0.3f", "/data/isptune/",time, gain );
                 szBaseFileName[99] = '\0';
 
@@ -2905,7 +2905,7 @@ PROCESS_CMD:
                     curTuneTask->mForceRGBOut = false;
                 }
 
-                mIspTunningTask->ispTuneStoreBuffer(curTuneTask, (MediaBuffer_t * )frame->used_flag, 
+                mIspTunningTask->ispTuneStoreBuffer(curTuneTask, (MediaBuffer_t * )frame->used_flag,
                                                     szBaseFileName, 0);
                 PROCESS_OVER:
                 //return this frame buffer
@@ -2932,10 +2932,10 @@ PROCESS_CMD:
                 break;
                 }
             default:
-                {                    
+                {
                 LOGE("%d tunning cmd is not support !",msg.command);
                 break;
-                }     
+                }
         }
     }
     return 0;
@@ -2948,12 +2948,12 @@ int CameraIspAdapter::faceNotify(struct RectFace* faces, int* num)
     short int x,y;
     unsigned short int width,height;
     bool setWin;
-    
+
     if (*num == 1) {
         // AF
         {
             m_camDevice->getAfMeasureWindow(&curWin);
-            
+
             cur_size = curWin.width*curWin.height;
             face_size = faces[0].width*faces[0].height;
             cur_size = cur_size*10/face_size;
@@ -2980,11 +2980,11 @@ int CameraIspAdapter::faceNotify(struct RectFace* faces, int* num)
                 y = faces[0].y*2000/mCamPreviewH - 1000;
                 width = faces[0].width*2000/mCamPreviewW;
                 height = faces[0].height*2000/mCamPreviewH;
-                
+
                 LOG1("faceWin: (%d, %d, %d, %d) ---> afWin: (%d, %d, %d, %d)",
                     faces[0].x, faces[0].y, faces[0].width, faces[0].height,
                     curWin.hOffset, curWin.vOffset,curWin.width,curWin.height);
-                
+
                 m_camDevice->setAfMeasureWindow(x,y,width,height);
             }
         }

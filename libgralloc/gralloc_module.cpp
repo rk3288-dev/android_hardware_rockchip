@@ -16,9 +16,6 @@
  * limitations under the License.
  */
 
-// #define ENABLE_DEBUG_LOG
-#include <log/custom_log.h>
-
 #include <errno.h>
 #include <pthread.h>
 
@@ -57,13 +54,6 @@ static int gralloc_device_open(const hw_module_t* module, const char* name, hw_d
 	int status = -EINVAL;
     int fd;
     property_set("sys.ggralloc.version", RK_GRALLOC_VERSION);
-
-    I("to open device '%s' in gralloc_module with ver '%s' on arm_release_ver '%s', built at '%s', on '%s'.",
-        name,
-        RK_GRALLOC_VERSION,
-        ARM_RELEASE_VER,
-        __TIME__,
-        __DATE__);
 
     fd = open("/dev/graphics/fb0", O_RDONLY, 0);
     ALOGD("gralloc_device_open new neiw fd=%d",fd);
@@ -113,7 +103,7 @@ static int gralloc_register_buffer(gralloc_module_t const* module, buffer_handle
 
 	hnd->pid = getpid();
 
-	if (hnd->flags & private_handle_t::PRIV_FLAGS_FRAMEBUFFER) 
+	if (hnd->flags & private_handle_t::PRIV_FLAGS_FRAMEBUFFER)
 	{
 		AERR( "Can't register buffer %p as it is a framebuffer", handle );
 	}
@@ -255,7 +245,7 @@ static int gralloc_lock_ycbcr(gralloc_module_t const* module,
     // if in future other formats are needed, store to private
     // handle and change the below code based on private format.
 
-#if 0    
+#if 0
     int ystride = hnd->stride;
     ycbcr->y  = (void*)hnd->base;
     ycbcr->cr = (void*)(hnd->base + ystride * hnd->height);
@@ -271,19 +261,19 @@ static int gralloc_lock_ycbcr(gralloc_module_t const* module,
 		case HAL_PIXEL_FORMAT_YCbCr_420_888:
             ystride = hnd->stride;
             ycbcr->y  = (void*)hnd->base;
-            ycbcr->cr = (void*)(hnd->base + ystride * hnd->height);
-            ycbcr->cb = (void*)(hnd->base + ystride * hnd->height + 1);
+            ycbcr->cr = (void*)((unsigned int)hnd->base + ystride * hnd->height);
+            ycbcr->cb = (void*)((unsigned int)hnd->base + ystride * hnd->height + 1);
             ycbcr->ystride = ystride;
             ycbcr->cstride = ystride;
             ycbcr->chroma_step = 2;
             memset(ycbcr->reserved, 0, sizeof(ycbcr->reserved));
             break;
 
-      case HAL_PIXEL_FORMAT_YCrCb_NV12: 
+      case HAL_PIXEL_FORMAT_YCrCb_NV12:
             ystride = hnd->stride;
             ycbcr->y  = (void*)hnd->base;
-            ycbcr->cr = (void*)(hnd->base + ystride *  hnd->height + 1);
-            ycbcr->cb = (void*)(hnd->base + ystride *  hnd->height);
+            ycbcr->cr = (void*)((unsigned int)hnd->base + ystride *  hnd->height + 1);
+            ycbcr->cb = (void*)((unsigned int)hnd->base + ystride *  hnd->height);
             ycbcr->ystride = ystride;
             ycbcr->cstride = ystride;
             ycbcr->chroma_step = 2;
@@ -295,8 +285,8 @@ static int gralloc_lock_ycbcr(gralloc_module_t const* module,
             ycbcr->ystride = ystride;
             ycbcr->cstride = (ystride/2 + 15) & ~15;
             ycbcr->y  = (void*)hnd->base;
-            ycbcr->cr = (void*)(hnd->base + ystride * hnd->height);
-            ycbcr->cb = (void*)(hnd->base + ystride * hnd->height + ycbcr->cstride * hnd->height/2);
+            ycbcr->cr = (void*)((unsigned int)hnd->base + ystride * hnd->height);
+            ycbcr->cb = (void*)((unsigned int)hnd->base + ystride * hnd->height + ycbcr->cstride * hnd->height/2);
             ycbcr->chroma_step = 1;
             memset(ycbcr->reserved, 0, sizeof(ycbcr->reserved));
             break;
@@ -304,8 +294,8 @@ static int gralloc_lock_ycbcr(gralloc_module_t const* module,
         case HAL_PIXEL_FORMAT_YCbCr_422_SP:
             ystride = hnd->stride;
             ycbcr->y  = (void*)hnd->base;
-            ycbcr->cb = (void*)(hnd->base + ystride * hnd->height);
-            ycbcr->cr = (void*)(hnd->base + ystride * hnd->height + 1);
+            ycbcr->cb = (void*)((unsigned int)hnd->base + ystride * hnd->height);
+            ycbcr->cr = (void*)((unsigned int)hnd->base + ystride * hnd->height + 1);
             ycbcr->ystride = ystride;
             ycbcr->cstride = ystride;
             ycbcr->chroma_step = 2;
@@ -357,8 +347,8 @@ private_module_t::private_module_t()
 	currentBuffer = NULL;
 	INIT_ZERO(info);
 	INIT_ZERO(finfo);
-	xdpi = 0.0f; 
-	ydpi = 0.0f; 
+	xdpi = 0.0f;
+	ydpi = 0.0f;
 	fps = 0.0f;
 	swapInterval = 1;
 
@@ -370,6 +360,6 @@ private_module_t::private_module_t()
 /*
  * HAL_MODULE_INFO_SYM will be initialized using the default constructor
  * implemented above
- */ 
+ */
 struct private_module_t HAL_MODULE_INFO_SYM;
 

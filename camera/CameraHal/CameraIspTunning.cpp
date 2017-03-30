@@ -1,5 +1,5 @@
 #include "CameraIspTunning.h"
-#include <libexpat/expat.h>
+#include <expat.h>
 #include "CameraHal_Tracer.h"
 
 
@@ -21,23 +21,23 @@ CameraIspTunning* CameraIspTunning::createInstance()
 
     CameraIspTunning *profiles = NULL;
     const int BUFF_SIZE = 1024;
-    
+
     fp = fopen(RK_ISP_TUNNING_FILE_PATH, "r");
     if(!fp){
   	    LOGE("%s:open %s failed!!\n",__func__,RK_ISP_TUNNING_FILE_PATH);
         return profiles;
     }
-    
+
     LOGD("open xml file(%s) success\n", RK_ISP_TUNNING_FILE_PATH);
 
     profiles = new CameraIspTunning();
-    
+
     XML_Parser parser = XML_ParserCreate(NULL);
     if(parser==NULL){
         LOGE("XML_ParserCreate failed\n");
         goto fail;
     }
-    
+
     XML_SetUserData(parser, profiles);
     XML_SetElementHandler(parser, StartElementHandler, NULL);
 
@@ -76,8 +76,8 @@ CameraIspTunning* CameraIspTunning::createInstance()
             LOGD("%s: WARNING:all tasks are disabled !!",__func__);
             goto  fail;
         }
-        profiles->mCurTunIndex    =   0; 
-        profiles->mCurTuneTask = profiles->mTuneInfoVector[0];   
+        profiles->mCurTunIndex    =   0;
+        profiles->mCurTuneTask = profiles->mTuneInfoVector[0];
     }
 
     LOGD("%s:task count is %d \n",__func__,profiles->mTuneTaskcount);
@@ -135,7 +135,7 @@ void CameraIspTunning::StartElementHandler(void *userData, const char *name, con
 
     }else if(strcmp(name,"Mec")==0){
         pCamTuneTaskInfo->mExpose.integrationTime = atof(atts[1]) / 1000;
-        pCamTuneTaskInfo->mExpose.gain = atof(atts[3]);             
+        pCamTuneTaskInfo->mExpose.gain = atof(atts[3]);
         pCamTuneTaskInfo->mExpose.integrationTimeStep = atof(atts[5]) / 1000;
         pCamTuneTaskInfo->mExpose.gainStep = atof(atts[7]);
         pCamTuneTaskInfo->mExpose.minRaw = atoi(atts[9]);
@@ -169,7 +169,7 @@ void CameraIspTunning::StartElementHandler(void *userData, const char *name, con
             pCamTuneTaskInfo->mWhiteBalance.whiteBalanceMode = WHITEBALANCE_MODE_AUTO;
         else
             pCamTuneTaskInfo->mWhiteBalance.whiteBalanceMode = WHITEBALANCE_MODE_INVALID;
-        
+
     }else if(strcmp(name,"Mwb")==0){
         strncpy(pCamTuneTaskInfo->mWhiteBalance.illumination, atts[1], strlen(atts[1]));
         strncpy(pCamTuneTaskInfo->mWhiteBalance.cc_matrix, atts[3], strlen(atts[3]));
@@ -467,7 +467,7 @@ int CameraIspTunning::ispTuneStoreBuffer
     ispTuneTaskInfo_s    *pIspTuneTaskInfo,
     MediaBuffer_t       *pBuffer,
     char     *szNmae,
-    int      index     
+    int      index
 )
 {
     int result = 0;
@@ -493,7 +493,7 @@ int CameraIspTunning::ispTuneStoreBuffer
     {
         return -1;
     }
-    
+
     // get dimensions for filename creation
     switch ( pPicBufMetaData->Type )
     {
@@ -641,7 +641,7 @@ int CameraIspTunning::ispTuneStoreBuffer
             combLen = strlen(szNmae) + strlen(szDimensions)  + strlen(szTypeLayout)+ strlen(szDateTime)+strlen(pIspTuneTaskInfo->mWhiteBalance.illumination) + strlen(szFileExt);
         else
             combLen = strlen(szNmae) + strlen(szDimensions)  + strlen(szTypeLayout)+ strlen(szDateTime)/*+strlen(szNumber)*/ + strlen(szFileExt);
-        
+
         if ( combLen >= FILENAME_MAX)
         {
             TRACE_E( "%s Max filename length exceeded.\n"
@@ -738,7 +738,7 @@ int  CameraIspTunning::ispTuneDesiredExp(long raw_ddr,int width,int height,int m
 
     min_raw <<= 8;
     max_raw <<= 8;
-	
+
 	for(num = 0; num < width*height; num++)
 		{
 			value = *p++;
@@ -747,7 +747,7 @@ int  CameraIspTunning::ispTuneDesiredExp(long raw_ddr,int width,int height,int m
 			if(value < min_raw)
 				min_raw_num++;
 		}
-	
+
 	//TRACE_D(0, "min_raw = %d \n", min_raw);
 	//TRACE_D(0, "max_raw = %d \n", max_raw);
 	//TRACE_D(0, "threshold = %d \n", threshold);
@@ -755,7 +755,7 @@ int  CameraIspTunning::ispTuneDesiredExp(long raw_ddr,int width,int height,int m
 
 	//TRACE_D(0, "min_raw_num = %.1f \n", min_raw_num);
 	//TRACE_D(0, "max_raw_num = %.1f \n", max_raw_num);
-	
+
 	proportion = min_raw_num*100/(width*height);
 	if(proportion > threshold){
         result |= 0x1;
@@ -765,11 +765,11 @@ int  CameraIspTunning::ispTuneDesiredExp(long raw_ddr,int width,int height,int m
 	if(proportion > threshold){
         result |= 0x2;
 		//TRACE_D(0, "%.5f ~~~~~~~~~~~\n", proportion);
-        
+
 	}
 	TRACE_D(0, "max_raw %d ~~~~~~~~~~~\n", proportion);
 
 	//TRACE_D(0, "%s @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(exit)\n", __FUNCTION__);
     return result;
-} 
+}
 };

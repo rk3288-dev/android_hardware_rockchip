@@ -56,14 +56,6 @@ static inline int find_format_index(int format)
 		case HAL_PIXEL_FORMAT_BGRA_8888:
 			index = GRALLOC_ARM_HAL_FORMAT_INDEXED_BGRA_8888;
 			break;
-#if PLATFORM_SDK_VERSION >= 19
-		case HAL_PIXEL_FORMAT_sRGB_A_8888:
-			index = GRALLOC_ARM_HAL_FORMAT_INDEXED_sRGB_A_8888;
-			break;
-		case HAL_PIXEL_FORMAT_sRGB_X_8888:
-			index = GRALLOC_ARM_HAL_FORMAT_INDEXED_sRGB_X_8888;
-			break;
-#endif
 		case HAL_PIXEL_FORMAT_YV12:
 			index = GRALLOC_ARM_HAL_FORMAT_INDEXED_YV12;
 			break;
@@ -80,7 +72,7 @@ static inline int find_format_index(int format)
 	return index;
 }
 
-// #define GRALLOC_ARM_FORMAT_SELECTION_DISABLE 
+// #define GRALLOC_ARM_FORMAT_SELECTION_DISABLE
 /*
  * Define GRALLOC_ARM_FORMAT_SELECTION_DISABLE to disable the format selection completely
  */

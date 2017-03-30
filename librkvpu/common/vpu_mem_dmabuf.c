@@ -517,7 +517,7 @@ RK_S32 VPUMallocLinear(VPUMemLinear_t *p, RK_U32 size)
         return -1;
     }
 
-    p->offset   = -1;
+    p->offset   = (RK_U32 *)-1;
     p->phy_addr = 0;
     p->vir_addr = NULL;
 
@@ -549,7 +549,7 @@ RK_S32 VPUMallocLinear(VPUMemLinear_t *p, RK_U32 size)
         }
 
         memcpy(p, p_dmabuf, sizeof(VPUMemLinear_t));
-        p->offset = (RK_S32*)p_dmabuf;
+        p->offset = (RK_U32*)p_dmabuf;
     } while (0);
     //pthread_mutex_unlock(&vpm_lock);
     return err;
@@ -585,7 +585,7 @@ RK_S32 VPUFreeLinear(VPUMemLinear_t *p)
     p->phy_addr = 0;
     p->vir_addr = NULL;
     p->size = 0;
-    p->offset = -1;
+    p->offset = (RK_U32 *)-1;
 
     //pthread_mutex_unlock(&vpm_lock);
 

@@ -19,6 +19,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <sys/ioctl.h>
 #include <linux/fb.h>
 
@@ -36,7 +37,7 @@
 #include "gralloc_vsync.h"
 
 // numbers of buffers for page flipping
-#define NUM_BUFFERS NUM_FB_BUFFERS 
+#define NUM_BUFFERS NUM_FB_BUFFERS
 #define RK_FBIOGET_IOMMU_STA        0x4632
 #define RK_FBIOSET_CLEAR_FB         0x4633
 enum
@@ -83,7 +84,7 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
 
 	if (hnd->flags & private_handle_t::PRIV_FLAGS_FRAMEBUFFER)
 	{
-		m->base.lock(&m->base, buffer, private_module_t::PRIV_USAGE_LOCKED_FOR_POST, 
+		m->base.lock(&m->base, buffer, private_module_t::PRIV_USAGE_LOCKED_FOR_POST,
 				0, 0, m->info.xres, m->info.yres, NULL);
 
 		const size_t offset = (uintptr_t)hnd->base - (uintptr_t)m->framebuffer->base;
@@ -92,26 +93,26 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
 		m->info.yoffset = offset / m->finfo.line_length;
 
 #ifdef STANDARD_LINUX_SCREEN
-		if (ioctl(m->framebuffer->fd, FBIOPAN_DISPLAY, &m->info) == -1) 
+		if (ioctl(m->framebuffer->fd, FBIOPAN_DISPLAY, &m->info) == -1)
 		{
 			AERR( "FBIOPAN_DISPLAY failed for fd: %d", m->framebuffer->fd );
-			m->base.unlock(&m->base, buffer); 
+			m->base.unlock(&m->base, buffer);
 			return -errno;
 		}
 #else /*Standard Android way*/
         #if 0
-		if (ioctl(m->framebuffer->fd, FBIOPUT_VSCREENINFO, &m->info) == -1) 
+		if (ioctl(m->framebuffer->fd, FBIOPUT_VSCREENINFO, &m->info) == -1)
 		{
 			AERR( "FBIOPUT_VSCREENINFO failed for fd: %d", m->framebuffer->fd );
-			m->base.unlock(&m->base, buffer); 
+			m->base.unlock(&m->base, buffer);
 			return -errno;
 		}
 		#endif
 		int sync = 0;
         struct rk_fb_win_cfg_data fb_info;
         memset(&fb_info,0,sizeof(fb_info));
-		
-        unsigned int fboffset = hnd->offset;        
+
+        unsigned int fboffset = hnd->offset;
         fb_info.win_par[0].area_par[0].data_format = hnd->format;
         fb_info.win_par[0].win_id = 0;
         fb_info.win_par[0].z_order = 0;
@@ -127,12 +128,12 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
         fb_info.win_par[0].area_par[0].yact = hnd->height;
         fb_info.win_par[0].area_par[0].xvir = hnd->width;
         fb_info.win_par[0].area_par[0].yvir = hnd->height;
-        if (ioctl(m->framebuffer->fd, RK_FBIOSET_CONFIG_DONE, &fb_info) == -1) 
+        if (ioctl(m->framebuffer->fd, RK_FBIOSET_CONFIG_DONE, &fb_info) == -1)
 		{
 			AERR( "FBIOPUT_VSCREENINFO failed for fd: %d", m->framebuffer->fd );
-			m->base.unlock(&m->base, buffer); 
+			m->base.unlock(&m->base, buffer);
 			return -errno;
-		} 
+		}
 		else
 		{
             for(int k=0;k<RK_MAX_BUF_NUM;k++)
@@ -141,26 +142,26 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
                     close(fb_info.rel_fence_fd[k]);
             }
             if(fb_info.ret_fence_fd != -1)
-                close(fb_info.ret_fence_fd);		
+                close(fb_info.ret_fence_fd);
 		}
 #endif
 		if ( 0 != gralloc_wait_for_vsync(dev) )
 		{
 			AERR( "Gralloc wait for vsync failed for fd: %d", m->framebuffer->fd );
-			m->base.unlock(&m->base, buffer); 
+			m->base.unlock(&m->base, buffer);
 			return -errno;
 		}
 		m->currentBuffer = buffer;
-	} 
+	}
 	else
 	{
 		void* fb_vaddr;
 		void* buffer_vaddr;
 
-		m->base.lock(&m->base, m->framebuffer, GRALLOC_USAGE_SW_WRITE_RARELY, 
+		m->base.lock(&m->base, m->framebuffer, GRALLOC_USAGE_SW_WRITE_RARELY,
 				0, 0, m->info.xres, m->info.yres, &fb_vaddr);
 
-		m->base.lock(&m->base, buffer, GRALLOC_USAGE_SW_READ_RARELY, 
+		m->base.lock(&m->base, buffer, GRALLOC_USAGE_SW_READ_RARELY,
 				0, 0, m->info.xres, m->info.yres, &buffer_vaddr);
 
 		// If buffer's alignment match framebuffer alignment we can do a direct copy.
@@ -185,8 +186,8 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
 				buffer_offset += hnd->byte_stride;
 			}
 		}
-		m->base.unlock(&m->base, buffer); 
-		m->base.unlock(&m->base, m->framebuffer); 
+		m->base.unlock(&m->base, buffer);
+		m->base.unlock(&m->base, m->framebuffer);
 	}
 
 	return 0;
@@ -198,7 +199,7 @@ int init_frame_buffer_locked(struct private_module_t* module)
 	{
 		return 0; // Nothing to do, already initialized
 	}
-        
+
 	char const * const device_template[] =
 	{
 		"/dev/graphics/fb%u",
@@ -307,9 +308,9 @@ int init_frame_buffer_locked(struct private_module_t* module)
 	if ( info.pixclock > 0 )
 	{
 		refreshRate =
-            1000000000000000LLU 
+            1000000000000000LLU
             / ( uint64_t( info.vsync_len + info.upper_margin + info.lower_margin + info.yres )  // 纵向 pixel_num.
-                * ( info.hsync_len + info.left_margin  + info.right_margin + info.xres )        // 横向. 
+                * ( info.hsync_len + info.left_margin  + info.right_margin + info.xres )        // 横向.
                 * info.pixclock );                                                              // pixel_clock.
 	}
 	else
@@ -393,7 +394,7 @@ int init_frame_buffer_locked(struct private_module_t* module)
 	 */
 	size_t fbSize = round_up_to_page_size(finfo.line_length * info.yres_virtual);
 	void* vaddr = mmap(0, fbSize, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-	if (vaddr == MAP_FAILED) 
+	if (vaddr == MAP_FAILED)
 	{
 		AERR( "Error mapping the framebuffer (%s)", strerror(errno) );
 		return -errno;
@@ -414,7 +415,7 @@ int init_frame_buffer_locked(struct private_module_t* module)
 
 	module->numBuffers = info.yres_virtual / info.yres;
 	module->bufferMask = 0;
-	
+
 #if GRALLOC_ARM_UMP_MODULE
 	ioctl(fd, IOCTL_GET_FB_UMP_SECURE_ID, &module->framebuffer->ump_id);
 	if ( (int)UMP_INVALID_SECURE_ID != module->framebuffer->ump_id )
@@ -457,11 +458,11 @@ int compositionComplete(struct framebuffer_device_t* dev)
 	   synchronously in the same thread, and not asynchronoulsy in a background thread later.
 	   The SurfaceFlinger requires this behaviour since it releases the lock on all the
 	   SourceBuffers (Layers) after the compositionComplete() function returns.
-	   However this "bad" behaviour by SurfaceFlinger should not affect performance, 
-	   since the Applications that render the SourceBuffers (Layers) still get the 
+	   However this "bad" behaviour by SurfaceFlinger should not affect performance,
+	   since the Applications that render the SourceBuffers (Layers) still get the
 	   full renderpipeline using asynchronous rendering. So they perform at maximum speed,
 	   and because of their complexity compared to the Surface flinger jobs, the Surface flinger
-	   is normally faster even if it does everyhing synchronous and serial. 
+	   is normally faster even if it does everyhing synchronous and serial.
 	   */
 	return 0;
 }
@@ -495,7 +496,7 @@ int framebuffer_device_open(hw_module_t const* module, const char* name, hw_devi
 	}
 
 	/* initialize our state here */
-	framebuffer_device_t *dev = new framebuffer_device_t();
+	framebuffer_device_t *dev = (framebuffer_device_t*)malloc(sizeof(*dev));
 	memset(dev, 0, sizeof(*dev));
 
 	/* initialize the procs */

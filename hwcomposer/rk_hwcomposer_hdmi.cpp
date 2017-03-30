@@ -26,7 +26,7 @@
 
 int         g_hdmi_mode;
 int         mUsedVopNum;
-void rk_parse_uevent_buf(const char *buf,int* type,int* flag,int* fbx, int len)
+static void rk_parse_uevent_buf(const char *buf,int* type,int* flag,int* fbx, int len)
 {
 	const char *str = buf;
 	while(*str){
@@ -41,7 +41,7 @@ void rk_parse_uevent_buf(const char *buf,int* type,int* flag,int* fbx, int len)
     }
 }
 
-void rk_check_hdmi_state()
+static void rk_check_hdmi_state()
 {
 #ifdef RK3288_MID
     int fd = open("/sys/devices/virtual/switch/hdmi/state", O_RDONLY);
@@ -75,7 +75,7 @@ void rk_check_hdmi_state()
 }
 
 //0,1,2
- void rk_check_hdmi_uevents(const char *buf,int len)
+static void rk_check_hdmi_uevents(const char *buf,int len)
 {
 	//ALOGD("line %d,buf[%s]",__LINE__,buf);
 #ifdef RK3288_MID
@@ -136,7 +136,7 @@ void rk_check_hdmi_state()
 #endif
 }
 
-void rk_handle_uevents(const char *buff,int len)
+static void rk_handle_uevents(const char *buff,int len)
 {
 	// uint64_t timestamp = 0;
     rk_check_hdmi_uevents(buff,len);

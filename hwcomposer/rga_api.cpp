@@ -23,7 +23,7 @@ RGA_set_src_act_info(
     req->src.act_h = height;
     req->src.x_offset = x_off;
     req->src.y_offset = y_off;
-    
+
     return 1;
 }
 
@@ -77,7 +77,7 @@ RGA_set_dst_act_info(
     req->dst.act_h = height;
     req->dst.x_offset = x_off;
     req->dst.y_offset = y_off;
-    
+
     return 1;
 }
 
@@ -120,22 +120,22 @@ RGA_set_dst_vir_info(
     msg->clip.xmax = clip->xmax;
     msg->clip.ymin = clip->ymin;
     msg->clip.ymax = clip->ymax;
-    
+
     msg->dst.alpha_swap |= (a_swap_en & 1);
-    
+
     return 1;
 }
 
-int 
+int
 RGA_set_pat_info(
     struct rga_req *msg,
     unsigned int width,
     unsigned int height,
     unsigned int x_off,
     unsigned int y_off,
-    unsigned int pat_format    
+    unsigned int pat_format
     )
-{    
+{
     msg->pat.act_w = width;
     msg->pat.act_h = height;
     msg->pat.x_offset = x_off;
@@ -168,28 +168,28 @@ RGA_set_rop_mask_info(
     return 1;
 }
 
-   
+
 int RGA_set_alpha_en_info(
 		struct rga_req *msg,
 		unsigned int  alpha_cal_mode,    /* 0:alpha' = alpha + (alpha>>7) | alpha' = alpha */
 		unsigned int  alpha_mode,        /* 0 global alpha / 1 per pixel alpha / 2 mix mode */
 		unsigned int  global_a_value,
-		unsigned int  PD_en,             /* porter duff alpha mode en */ 
-		unsigned int  PD_mode, 
+		unsigned int  PD_en,             /* porter duff alpha mode en */
+		unsigned int  PD_mode,
 		unsigned int  dst_alpha_en )     /* use dst alpha  */
 {
-	
+
     msg->alpha_rop_flag |= 1;
     msg->alpha_rop_flag |= ((PD_en & 1) << 3);
     msg->alpha_rop_flag |= ((alpha_cal_mode & 1) << 4);
 
     msg->alpha_global_value = global_a_value;
-    msg->alpha_rop_mode |= (alpha_mode & 3);    
+    msg->alpha_rop_mode |= (alpha_mode & 3);
     msg->alpha_rop_mode |= (dst_alpha_en << 5);
 
     msg->PD_mode = PD_mode;
-    
-    
+
+
     return 1;
 }
 
@@ -205,7 +205,7 @@ RGA_set_rop_en_info(
 {
     msg->alpha_rop_flag |= (0x3);
     msg->alpha_rop_mode |= ((ROP_mode & 3) << 2);
-      
+
     msg->rop_code = ROP_code;
     msg->color_fill_mode = color_mode;
     msg->fg_color = solid_color;
@@ -227,7 +227,7 @@ int RGA_set_fading_en_info(
     return 1;
 }
 
-int 
+int
 RGA_set_src_trans_mode_info(
 		struct rga_req *msg,
 		unsigned char trans_mode,
@@ -241,7 +241,7 @@ RGA_set_src_trans_mode_info(
 		)
 {
     msg->src_trans_mode = ((a_en & 1) << 4) | ((b_en & 1) << 3) | ((g_en & 1) << 2) | ((r_en & 1) << 1) | (trans_mode & 1);
-    
+
     msg->color_key_min = color_key_min;
     msg->color_key_max = color_key_max;
     msg->alpha_rop_mode |= (zero_mode_en << 4);
@@ -252,11 +252,11 @@ RGA_set_src_trans_mode_info(
 int
 RGA_set_bitblt_mode(
 		struct rga_req *msg,
-		unsigned char scale_mode,    // 0/near  1/bilnear  2/bicubic  
-		unsigned char rotate_mode,   // 0/copy 1/rotate_scale 2/x_mirror 3/y_mirror 
-		unsigned int  angle,         // rotate angle     
-		unsigned int  dither_en,     // dither en flag   
-		unsigned int  AA_en,         // AA flag          
+		unsigned char scale_mode,    // 0/near  1/bilnear  2/bicubic
+		unsigned char rotate_mode,   // 0/copy 1/rotate_scale 2/x_mirror 3/y_mirror
+		unsigned int  angle,         // rotate angle
+		unsigned int  dither_en,     // dither en flag
+		unsigned int  AA_en,         // AA flag
 		unsigned int  yuv2rgb_mode
 		)
 {
@@ -265,10 +265,10 @@ RGA_set_bitblt_mode(
 
     if(((msg->src.act_w >> 1) > msg->dst.act_w) || ((msg->src.act_h >> 1) > msg->dst.act_h))
         return -1;
-    
+
     msg->scale_mode = scale_mode;
     msg->rotate_mode = rotate_mode;
-    
+
     msg->sina = sina_table[angle];
     msg->cosa = cosa_table[angle];
 
@@ -279,13 +279,13 @@ RGA_set_bitblt_mode(
     alpha_mode = msg->alpha_rop_mode & 3;
     if(rotate_mode == BB_ROTATE)
     {
-        if (AA_en == ENABLE) 
-        {   
+        if (AA_en == ENABLE)
+        {
             if ((msg->alpha_rop_flag & 0x3) == 0x1)
             {
                 if (alpha_mode == 0)
                 {
-                msg->alpha_rop_mode = 0x2;            
+                msg->alpha_rop_mode = 0x2;
                 }
                 else if (alpha_mode == 1)
                 {
@@ -296,15 +296,15 @@ RGA_set_bitblt_mode(
             {
                 msg->alpha_rop_flag |= 1;
                 msg->alpha_rop_mode = 1;
-            }                        
-        }        
+            }
+        }
     }
-   
+
     if (msg->src_trans_mode)
         msg->scale_mode = 0;
 
     msg->alpha_rop_flag |= (dither_en << 5);
-    
+
     return 0;
 }
 
@@ -319,12 +319,12 @@ RGA_set_color_palette_mode(
 		)
 {
     msg->render_mode = color_palette_mode;
-    
+
     msg->palette_mode = palette_mode;
     msg->endian_mode = endian_mode;
     msg->fg_color = bpp1_0_color;
     msg->bg_color = bpp1_1_color;
-    
+
     return 1;
 }
 
@@ -338,7 +338,7 @@ RGA_set_color_fill_mode(
     	unsigned char  cf_mode,                  /* patten fill or solid fill   */
 		unsigned int color,                    /* solid color                 */
 		unsigned short pat_width,                /* pattern width               */
-		unsigned short pat_height,               /* pattern height              */   
+		unsigned short pat_height,               /* pattern height              */
 		unsigned char pat_x_off,                 /* pattern x offset            */
 		unsigned char pat_y_off,                 /* pattern y offset            */
 		unsigned char aa_en                      /* alpha en                    */
@@ -357,7 +357,7 @@ RGA_set_color_fill_mode(
     msg->gr_color.gr_y_r = ((int)(gr_color->gr_y_r * 256.0))& 0xffff;
 
     msg->color_fill_mode = cf_mode;
-    
+
     msg->pat.act_w = pat_width;
     msg->pat.act_h = pat_height;
 
@@ -367,7 +367,7 @@ RGA_set_color_fill_mode(
     msg->fg_color = color;
 
     msg->alpha_rop_flag |= ((gr_satur_mode & 1) << 6);
-    
+
     if(aa_en)
     {
     	msg->alpha_rop_flag |= 0x1;
@@ -400,13 +400,13 @@ RGA_set_line_point_drawing_mode(
     msg->line_draw_info.line_width = line_width;
     msg->line_draw_info.flag |= (AA_en & 1);
     msg->line_draw_info.flag |= ((last_point_en & 1) << 1);
-    
+
     if (AA_en == 1)
     {
         msg->alpha_rop_flag = 1;
         msg->alpha_rop_mode = 0x1;
     }
-    
+
     return 1;
 }
 
@@ -420,7 +420,7 @@ RGA_set_blur_sharp_filter_mode(
 		)
 {
     msg->render_mode = blur_sharp_filter_mode;
-    
+
     msg->bsfilter_flag |= (filter_type & 3);
     msg->bsfilter_flag |= ((filter_mode & 1) << 2);
     msg->alpha_rop_flag |= ((dither_en & 1) << 5);
@@ -434,7 +434,7 @@ RGA_set_pre_scaling_mode(
 		)
 {
     msg->render_mode = pre_scaling_mode;
-    
+
     msg->alpha_rop_flag |= ((dither_en & 1) << 5);
     return 1;
 }
@@ -456,7 +456,7 @@ RGA_update_palette_table_mode(
 #endif
 {
     msg->render_mode = update_palette_table_mode;
-    
+
     msg->LUT_addr = LUT_addr;
     msg->palette_mode = palette_mode;
     return 1;
@@ -473,11 +473,11 @@ RGA_set_update_patten_buff_mode(
 		)
 {
     msg->render_mode = update_patten_buff_mode;
-    
+
     msg->pat.yrgb_addr   = pat_addr;
     msg->pat.act_w  = w*h;   // hxx
     msg->pat.act_h  = 1;     // hxx
-    msg->pat.format = format;    
+    msg->pat.format = format;
     return 1;
 }
 
@@ -509,7 +509,7 @@ RGA_set_mmu_info(
     msg->mmu_info.base_addr = base_addr;
     msg->mmu_info.mmu_flag  = ((page_size & 0x3) << 4) |
                               ((cmd_flush & 0x1) << 3) |
-                              ((dst_flush & 0x1) << 2) | 
+                              ((dst_flush & 0x1) << 2) |
                               ((src_flush & 0x1) << 1) | mmu_en;
     return 1;
 }
@@ -532,7 +532,7 @@ EXPORT_SYMBOL(direct_fb_show);
 #endif
 
 /* copy */
-void rga_test_0()
+static void rga_test_0()
 {
     struct rga_req req;
 
@@ -545,14 +545,14 @@ void rga_test_0()
     clip.xmax = 799;
     clip.ymin = 0;
     clip.ymax = 479;
-    
+
     RGA_set_src_act_info(&req, 320, 240, 0, 0);
 #if defined(__arm64__) || defined(__aarch64__)
     RGA_set_src_vir_info(&req, (unsigned long)src_addr, 0, 0, 320, 240, RK_FORMAT_RGBA_8888, 0);
 #else
     RGA_set_src_vir_info(&req, (unsigned int)src_addr, 0, 0, 320, 240, RK_FORMAT_RGBA_8888, 0);
 #endif
-    
+
     RGA_set_dst_act_info(&req, 320, 240, 200, 100);
 #if defined(__arm64__) || defined(__aarch64__)
     RGA_set_dst_vir_info(&req, (unsigned long)dst_addr, 0, 0, 800, 480, &clip, RK_FORMAT_RGBA_8888, 0);
@@ -563,7 +563,7 @@ void rga_test_0()
     RGA_set_bitblt_mode(&req, 0, 0, 0, 0, 0, 0);
 
     RGA_set_mmu_info(&req, 1, 0, 0, 0, 0, 2);
-	
+
 #if 0
     {
     fb_info *fb = get_fb(0);
@@ -587,7 +587,7 @@ void rga_test_0()
 
     fb->var.bits_per_pixel = 32;
 
-    direct_fb_show(fb);    
+    direct_fb_show(fb);
     }
 #endif
 }
@@ -595,7 +595,7 @@ void rga_test_0()
 
 
 /* rotate 30??*/
-void rga_test_rotate()
+static void rga_test_rotate()
 {
     struct rga_req req;
 
@@ -608,7 +608,7 @@ void rga_test_rotate()
     clip.xmax = 799;
     clip.ymin = 0;
     clip.ymax = 479;
-    
+
     RGA_set_src_act_info(&req, 320, 240, 0, 0);
 #if defined(__arm64__) || defined(__aarch64__)
     RGA_set_src_vir_info(&req, (unsigned long)src_addr, 0, 0, 320, 240, RK_FORMAT_RGBA_8888, 0);
@@ -650,7 +650,7 @@ void rga_test_rotate()
 
     fb->var.bits_per_pixel = 32;
 
-    direct_fb_show(fb);    
+    direct_fb_show(fb);
     }
 #endif
 }

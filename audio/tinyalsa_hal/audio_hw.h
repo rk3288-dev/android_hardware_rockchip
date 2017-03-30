@@ -16,7 +16,7 @@
 
 /**
  * @file audio_hw.h
- * @brief 
+ * @brief
  *                 ALSA Audio Git Log
  * - V0.1.0:add alsa audio hal,just support 312x now.
  * - V0.2.0:remove unused variable.
@@ -44,20 +44,20 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <fcntl.h>
-     
+
 #include <cutils/log.h>
 #include <cutils/properties.h>
 #include <cutils/str_parms.h>
-     
+
 #include <hardware/audio.h>
 #include <hardware/hardware.h>
-     
+
 #include <linux/videodev2.h>
-     
+
 #include <system/audio.h>
-     
+
 #include <tinyalsa/asoundlib.h>
-     
+
 #include <audio_utils/resampler.h>
 #include <audio_route/audio_route.h>
 
@@ -87,12 +87,12 @@ int PCM_CARD_SPDIF = 1;
 #define PCM_CARD_HDMI 1
 #define PCM_CARD_SPDIF 2
 #define PCM_CARD_USB 3
-#define PCM_TOTAL 4 
+#define PCM_TOTAL 4
 #endif
 #define PCM_DEVICE 0
 #define PCM_DEVICE_SCO 1
 #define PCM_DEVICE_VOICE 2
-#define PCM_DEVICE_DEEP 3 
+#define PCM_DEVICE_DEEP 3
 
 #define MIXER_CARD 0
 
@@ -179,7 +179,7 @@ struct pcm_config pcm_config = {
 struct pcm_config pcm_config_in = {
     .channels = 2,
     .rate = 44100,
-    .period_size = 1024, 
+    .period_size = 1024,
     .period_count = 4,
     .format = PCM_FORMAT_S16_LE,
 };
@@ -494,16 +494,16 @@ struct mixer* pre_mixer;
 struct direct_mode_t direct_mode = {HW_PARAMS_FLAG_LPCM, NULL};
 unsigned char channel_status[CHASTA_SUB_NUM];
 static int scount = 0;
-pthread_t hdmi_uevent_t = NULL;
+pthread_t hdmi_uevent_t = (pthread_t)NULL;
 int prop_pcm;//for debug
 
 static void do_out_standby(struct stream_out *out);
 
 /**
- * @brief initchnsta 
+ * @brief initchnsta
  */
 void initchnsta(void)
-{   
+{
     memset(channel_status, 0x0, CHASTA_SUB_NUM);
     channel_status[CHASTA_BIT1*2] = 1;
     channel_status[CHASTA_BIT1*2+1] = 1;
@@ -536,7 +536,7 @@ void initchnsta(void)
 }
 
 /**
- * @brief setnlpcmchnsta 
+ * @brief setnlpcmchnsta
  */
 void setnlpcmchnsta(void)
 {
@@ -586,7 +586,7 @@ void setddpchnsta(void)
 }
 
 /**
- * @brief sethbrchnsta 
+ * @brief sethbrchnsta
  */
 void sethbrchnsta(void)
 {
@@ -611,7 +611,7 @@ void sethbrchnsta(void)
 }
 
 /**
- * @brief dumpchnsta 
+ * @brief dumpchnsta
  */
 void dumpchnsta()
 {

@@ -22,7 +22,7 @@ CameraFakeAdapter::~CameraFakeAdapter()
     free(mDataSource);
 }
 
-int createSourceImage(unsigned char* output, int width, int height)  
+int createSourceImage(unsigned char* output, int width, int height)
 {
     int srcW = 240;
     int srcH = 240;
@@ -43,7 +43,7 @@ int createSourceImage(unsigned char* output, int width, int height)
 
     int size = width * height * 4;
     unsigned char *RGBBuffer = new unsigned char[size];
-    
+
     fread(RGBBuffer, sizeof(char), size, ifp);
 
     SkBitmap bitmap;
@@ -56,22 +56,22 @@ int createSourceImage(unsigned char* output, int width, int height)
     newbmp.eraseColor(SK_ColorWHITE);
 
     SkCanvas* canvas = new SkCanvas(newbmp);
-    SkIRect srcR = { 0, 0, SkIntToScalar(srcW), SkIntToScalar(srcH) };
+    SkIRect srcR = { 0, 0, srcW, srcH };
     SkRect  dstR = { SkIntToScalar((width-srcW) / 2), SkIntToScalar((height - srcH) / 2),
                                            SkIntToScalar((width + srcW) / 2), SkIntToScalar(height + srcH) / 2 };
 
-    canvas->drawBitmapRect(bitmap, /*&srcR*/ NULL, dstR, NULL);
+    canvas->drawBitmapRect(bitmap, srcR, dstR, NULL);
 
     //RGBA8888 -> RGB888
     int r, g, b, a;
     SkAutoLockPixels alp(newbmp);
-    void* pixels = newbmp.getPixels();
+    long pixels = (long)newbmp.getPixels();
 
     for (int i=0; i<height; i++)
     {
         for(int j=0; j<width; j++)
         {
-             memcpy(output + i*width*3 + j*3, pixels+((width)*(i + 1) - j)*4, sizeof(char)*3);
+             memcpy(output + i*width*3 + j*3, (void *)(pixels+((width)*(i + 1) - j)*4), sizeof(char)*3);
         }
     }
 
@@ -80,19 +80,19 @@ int createSourceImage(unsigned char* output, int width, int height)
     fclose(ifp);
 
     return 0;
-}  
+}
 
 bool RGB2YUV420SPFast(void* RgbBuf, void* yuvBuf, int nWidth, int nHeight)
 {
 
-    int i, j; 
-	unsigned char*bufY, *bufUV, *bufRGB, *bufYuv; 
-	bufY = yuvBuf; 
-	bufUV = (unsigned char*)((long)yuvBuf + nWidth * nHeight); 
-	unsigned char y, u, v, r, g, b; 
+    int i, j;
+	unsigned char*bufY, *bufUV, *bufRGB, *bufYuv;
+	bufY = (unsigned char*)yuvBuf;
+	bufUV = (unsigned char*)((long)yuvBuf + nWidth * nHeight);
+	unsigned char y, u, v, r, g, b;
 	for (j = 0; j<nHeight; j++)
 	{
-		bufRGB = RgbBuf + nWidth * (nHeight - 1 - j) * 3 ; 
+		bufRGB = (unsigned char*)RgbBuf + nWidth * (nHeight - 1 - j) * 3 ;
 		for (i = 0;i < nWidth; i++)
 		{
 			int pos = nWidth * i + j;
@@ -100,8 +100,8 @@ bool RGB2YUV420SPFast(void* RgbBuf, void* yuvBuf, int nWidth, int nHeight)
 			g = *(bufRGB++);
 			b = *(bufRGB++);
 
-			y = (unsigned char)( ( 66 * r + 129 * g +  25 * b + 128) >> 8) + 16  ;           
-			u = (unsigned char)( ( -38 * r -  74 * g + 112 * b + 128) >> 8) + 128 ;           
+			y = (unsigned char)( ( 66 * r + 129 * g +  25 * b + 128) >> 8) + 16  ;
+			u = (unsigned char)( ( -38 * r -  74 * g + 112 * b + 128) >> 8) + 128 ;
 			v = (unsigned char)( ( 112 * r -  94 * g -  18 * b + 128) >> 8) + 128 ;
 			*(bufY++) = (y<0) ? 0 : ((y>255) ? 255 : y);
 
@@ -136,9 +136,9 @@ void CameraFakeAdapter::initDefaultParameters(int camFd)
     parameterString.append("176x144,320x240,352x288,640x480,800x600,1280x720,1920x1080,1600x1200,2592x1944");
     params.set(CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES, parameterString.string());
     params.setPreviewSize(640,480);
-    /*picture size setting*/      
-    params.set(CameraParameters::KEY_SUPPORTED_PICTURE_SIZES, parameterString.string());        
-    params.setPictureSize(640,480); 
+    /*picture size setting*/
+    params.set(CameraParameters::KEY_SUPPORTED_PICTURE_SIZES, parameterString.string());
+    params.setPictureSize(640,480);
 
     params.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FORMATS, "yuv420sp,yuv420p");
     params.set(CameraParameters::KEY_VIDEO_FRAME_FORMAT,CameraParameters::PIXEL_FORMAT_YUV420SP);
@@ -149,7 +149,7 @@ void CameraFakeAdapter::initDefaultParameters(int camFd)
     parameterString = CameraParameters::FOCUS_MODE_FIXED;
     params.set(CameraParameters::KEY_FOCUS_MODE, CameraParameters::FOCUS_MODE_FIXED);
 	params.set(CameraParameters::KEY_SUPPORTED_FOCUS_MODES, parameterString.string());
-    
+
     /*picture format setting*/
     params.set(CameraParameters::KEY_SUPPORTED_PICTURE_FORMATS, CameraParameters::PIXEL_FORMAT_JPEG);
     params.setPictureFormat(CameraParameters::PIXEL_FORMAT_JPEG);
@@ -158,7 +158,7 @@ void CameraFakeAdapter::initDefaultParameters(int camFd)
     /*rotation setting*/
     params.set(CameraParameters::KEY_ROTATION, "0");
 
-    /*lzg@rockchip.com :add some settings to pass cts*/	
+    /*lzg@rockchip.com :add some settings to pass cts*/
     /*focus distance setting ,no much meaning ,only for passing cts */
     parameterString = "0.3,50,Infinity";
     params.set(CameraParameters::KEY_FOCUS_DISTANCES, parameterString.string());
@@ -181,7 +181,7 @@ void CameraFakeAdapter::initDefaultParameters(int camFd)
     parameterString = "160";
     params.set(CameraParameters::KEY_JPEG_THUMBNAIL_WIDTH, parameterString.string());
     parameterString = "128";
-    params.set(CameraParameters::KEY_JPEG_THUMBNAIL_HEIGHT, parameterString.string()); 
+    params.set(CameraParameters::KEY_JPEG_THUMBNAIL_HEIGHT, parameterString.string());
     /* zyc@rock-chips.com: for cts ,KEY_MAX_NUM_DETECTED_FACES_HW should not be 0 */
     params.set(CameraParameters::KEY_RECORDING_HINT,"false");
     params.set(CameraParameters::KEY_VIDEO_STABILIZATION_SUPPORTED,"false");
@@ -204,11 +204,11 @@ void CameraFakeAdapter::initDefaultParameters(int camFd)
     //for video test
     params.set(CameraParameters::KEY_PREVIEW_FPS_RANGE, "3000,30000");
     params.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FPS_RANGE, "(3000,30000)");
-    params.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FRAME_RATES, "10,15,30");  
-	
+    params.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FRAME_RATES, "10,15,30");
+
     mParameters = params;
     LOGD("%s",__func__);
-    
+
 }
 
 
@@ -245,7 +245,7 @@ int CameraFakeAdapter::getFrame(FramInfo_s** tmpFrame)
     output frame format: yuv420sp(NV12)
     output frame res   :mCamPreviewW x mCamPreviewH
     outpurt frame buffer: buf_vir
-    
+
     */
 
     memcpy((void*)buf_vir, mDataSource, mCamPreviewW*mCamPreviewH*3/2);
@@ -265,7 +265,7 @@ int CameraFakeAdapter::adapterReturnFrame(long index,int cmd)
         mCamDriverStreamLock.unlock();
         return 0;
     }
-	mPreviewBufProvider->setBufferStatus(index,0, cmd); 
+	mPreviewBufProvider->setBufferStatus(index,0, cmd);
     mCamDriverStreamLock.unlock();
     return 0;
 }
@@ -291,7 +291,7 @@ int CameraFakeAdapter::cameraStart()
         mCamDriverV4l2Buffer[i] = (char*)mPreviewBufProvider->getBufVirAddr(i);
         mPreviewBufProvider->setBufferStatus(i, 0,previewBufStatus);
     }
-    
+
     mPreviewErrorFrameCount = 0;
     mPreviewFrameIndex = 0;
     cameraStream(true);

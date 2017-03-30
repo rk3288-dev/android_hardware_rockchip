@@ -30,10 +30,10 @@ unsigned int MemManagerBase::getBufferAddr(enum buffer_type_enum buf_type, unsig
 {
     unsigned long addr = 0x00;
     struct bufferinfo_s *buf_info;
-   
+
     switch(buf_type)
     {
-		case PREVIEWBUFFER:			
+		case PREVIEWBUFFER:
 			buf_info = mPreviewBufferInfo;
 			break;
 		case RAWBUFFER:
@@ -69,7 +69,7 @@ getVirAddr_end:
 
 int MemManagerBase::dump()
 {
-    
+
     return 0;
 }
 
@@ -121,12 +121,12 @@ int IonMemManager::createIonBuffer(struct bufferinfo_s* ionbuf)
 	int frame_size;
 	struct ion_buffer_t* tmpalloc = NULL;
 	struct bufferinfo_s* tmp_buf = NULL;
-    
+
 	if (!ionbuf || !mIonMemMgr < 0) {
 		LOGE("ion_alloc malloc buffer failed");
 		goto null_fail;
 	}
-    
+
 	numBufs = ionbuf->mNumBffers;
 	frame_size = ionbuf->mPerBuffersize;
 	ionbuf->mBufferSizes = numBufs*PAGE_ALIGN(frame_size);
@@ -151,14 +151,14 @@ int IonMemManager::createIonBuffer(struct bufferinfo_s* ionbuf)
         default:
             goto null_fail;
     }
-    
+
 	memset(tmpalloc,0,sizeof(tmpalloc));
 	ret = mIonMemMgr->alloc(ionbuf->mBufferSizes, _ION_HEAP_RESERVE, tmpalloc);
 	if(ret != 0) {
 		LOGE("ion_alloc malloc buffer failed , type is = %d ",ionbuf->mBufType);
 		goto alloc_fail;
 	}
-    
+
 	ionbuf->mPhyBaseAddr = (unsigned long)tmpalloc->phys;
 	ionbuf->mVirBaseAddr = (unsigned long)tmpalloc->virt;
 	ionbuf->mPerBuffersize = PAGE_ALIGN(frame_size);
@@ -176,7 +176,7 @@ null_fail:
 void IonMemManager::destroyIonBuffer(buffer_type_enum buftype)
 {
 	struct ion_buffer_t* tmpalloc = NULL;
-    
+
 	switch(buftype)
 	{
 		case PREVIEWBUFFER:
@@ -251,19 +251,19 @@ int IonMemManager::createVideoEncBuffer(struct bufferinfo_s* videoencbuf)
 	LOG_FUNCTION_NAME
 	int ret;
 	Mutex::Autolock lock(mLock);
-	
+
 	if(videoencbuf->mBufType != VIDEOENCBUFFER)
 		LOGE("the type is not VIDEOENCBUFFER");
-	
+
 	if(!mVideoEncData) {
 		mVideoEncData = (ion_buffer_t*)malloc(sizeof(ion_buffer_t));
 	} else if(mVideoEncData->virt) {
 		LOG1("FREE the video buffer alloced before firstly");
 		destroyVideoEncBuffer();
 	}
-	
+
 	memset(mVideoEncData,0,sizeof(ion_buffer_t));
-	
+
 	ret = createIonBuffer(videoencbuf);
 	if (ret == 0) {
 		LOG1("Video buffer information(phy:0x%x vir:0x%x size:0x%x)",
@@ -291,19 +291,19 @@ int IonMemManager::createPreviewBuffer(struct bufferinfo_s* previewbuf)
 	LOG_FUNCTION_NAME
     int ret;
 	Mutex::Autolock lock(mLock);
-    
+
 	if(previewbuf->mBufType != PREVIEWBUFFER)
 		LOGE("the type is not PREVIEWBUFFER");
-    
+
 	if(!mPreviewData) {
 		mPreviewData = (ion_buffer_t*)malloc(sizeof(ion_buffer_t));
 	} else if(mPreviewData->virt) {
 		LOG1("FREE the preview buffer alloced before firstly");
 		destroyPreviewBuffer();
 	}
-    
+
 	memset(mPreviewData,0,sizeof(ion_buffer_t));
-    
+
     ret = createIonBuffer(previewbuf);
     if (ret == 0) {
         LOG1("Preview buffer information(phy:0x%x vir:0x%x size:0x%x)",
@@ -330,7 +330,7 @@ int IonMemManager::createRawBuffer(struct bufferinfo_s* rawbuf)
 	LOG_FUNCTION_NAME
     int ret;
 	Mutex::Autolock lock(mLock);
-    
+
 	if (rawbuf->mBufType != RAWBUFFER)
 		LOGE("%s(%d): the type is not RAWBUFFER",__FUNCTION__,__LINE__);
 
@@ -377,7 +377,7 @@ int IonMemManager::destroyRawBuffer()
         destroyJpegBuffer();
     }
     memset(mJpegData,0,sizeof(ion_buffer_t));
-    
+
     ret = createIonBuffer(jpegbuf);
     if (ret == 0) {
         LOG1("Jpeg buffer information(phy:0x%x vir:0x%x size:0x%x)",
@@ -402,7 +402,7 @@ int IonMemManager::flushCacheMem(buffer_type_enum buftype,unsigned int offset, u
 {
     Mutex::Autolock lock(mLock);
     ion_buffer_t data;
-    
+
     switch(buftype)
 	{
 		case PREVIEWBUFFER:
@@ -410,7 +410,7 @@ int IonMemManager::flushCacheMem(buffer_type_enum buftype,unsigned int offset, u
 			break;
 		case RAWBUFFER:
 			data = *mRawData;
-            
+
 			break;
 		case JPEGBUFFER:
 			data = *mJpegData;
@@ -421,7 +421,7 @@ int IonMemManager::flushCacheMem(buffer_type_enum buftype,unsigned int offset, u
 		default:
 			break;
 	}
-    
+
     mIonMemMgr->cache_op(data, ION_FLUSH_CACHE);
 
     return 0;
@@ -465,7 +465,7 @@ IonDmaMemManager::~IonDmaMemManager()
 	}
 	if(client_fd != -1)
          ion_close(client_fd);
-		
+
 
 }
 
@@ -485,12 +485,12 @@ int IonDmaMemManager::createIonBuffer(struct bufferinfo_s* ionbuf)
 	long temp_handle = 0;
     unsigned long vir_addr = 0;
 
-    
+
 	if (!ionbuf) {
 		LOGE("ion_alloc malloc buffer failed");
 		return -1;
 	}
-    
+
 	numBufs = ionbuf->mNumBffers;
 	frame_size = ionbuf->mPerBuffersize;
 	ionbuf->mBufferSizes = numBufs*PAGE_ALIGN(frame_size);
@@ -507,7 +507,7 @@ int IonDmaMemManager::createIonBuffer(struct bufferinfo_s* ionbuf)
 			break;
 		case RAWBUFFER:
             tmpalloc =  mRawData;
-               
+
 			if((tmp_buf = (struct bufferinfo_s*)malloc(numBufs*sizeof(struct bufferinfo_s))) != NULL){
                 mRawBufferInfo = tmp_buf;
             }else{
@@ -517,7 +517,7 @@ int IonDmaMemManager::createIonBuffer(struct bufferinfo_s* ionbuf)
 			break;
 		case JPEGBUFFER:
             tmpalloc = mJpegData;
-            
+
 			if((tmp_buf  = (struct bufferinfo_s*)malloc(numBufs*sizeof(struct bufferinfo_s))) != NULL ){
                 mJpegBufferInfo = tmp_buf;
             }else{
@@ -572,7 +572,7 @@ int IonDmaMemManager::createIonBuffer(struct bufferinfo_s* ionbuf)
             ion_free(client_fd,handle);
             break;
         }
-        
+
         if((!mIommuEnabled) || (!ionbuf->mIsForceIommuBuf)){
             ret=ion_get_phys(client_fd,handle,&(tmpalloc->phy_addr));
 			if(ret<0)
@@ -586,7 +586,7 @@ int IonDmaMemManager::createIonBuffer(struct bufferinfo_s* ionbuf)
         tmpalloc->ion_hdl = (void*)temp_handle;
         tmpalloc->map_fd    =   map_fd;
 
-        
+
     	ionbuf->mPhyBaseAddr = (unsigned long)tmpalloc->phy_addr;
     	ionbuf->mVirBaseAddr = (unsigned long)tmpalloc->vir_addr;
     	ionbuf->mPerBuffersize = PAGE_ALIGN(frame_size);
@@ -594,7 +594,7 @@ int IonDmaMemManager::createIonBuffer(struct bufferinfo_s* ionbuf)
 		*tmp_buf = *ionbuf;
 		tmp_buf++;
         tmpalloc++;
-        
+
     }
     if(ret < 0){
         LOGE(" failed !");
@@ -602,7 +602,7 @@ int IonDmaMemManager::createIonBuffer(struct bufferinfo_s* ionbuf)
             --tmpalloc;
             --tmp_buf;
             munmap((void *)tmpalloc->vir_addr, tmpalloc->size);
-            ion_free(client_fd, tmpalloc->ion_hdl);
+            ion_free(client_fd, (ion_user_handle_t)tmpalloc->ion_hdl);
         }
         free(tmpalloc);
         free(tmp_buf);
@@ -616,7 +616,7 @@ void IonDmaMemManager::destroyIonBuffer(buffer_type_enum buftype)
     int err = 0;
 	struct bufferinfo_s* tmp_buf = NULL;
 
-   
+
 	switch(buftype)
 	{
 		case PREVIEWBUFFER:
@@ -651,7 +651,7 @@ void IonDmaMemManager::destroyIonBuffer(buffer_type_enum buftype)
             }
 
             close(tmpalloc->map_fd);
-            err = ion_free(client_fd, tmpalloc->ion_hdl);
+            err = ion_free(client_fd, (ion_user_handle_t)tmpalloc->ion_hdl);
         }
         tmpalloc++;
     }
@@ -688,7 +688,7 @@ void IonDmaMemManager::destroyIonBuffer(buffer_type_enum buftype)
             break;
 	}
 
-    
+
 }
 
 
@@ -697,19 +697,19 @@ int IonDmaMemManager::createVideoEncBuffer(struct bufferinfo_s* videoencbuf)
 	LOG_FUNCTION_NAME
 	int ret;
 	Mutex::Autolock lock(mLock);
-	
+
 	if(videoencbuf->mBufType != VIDEOENCBUFFER)
 		LOGE("the type is not VIDEOENCBUFFER");
-	
+
 	if(!mVideoEncData) {
 		mVideoEncData = (camera_ionbuf_t*)malloc(sizeof(camera_ionbuf_t) * videoencbuf->mNumBffers);
 	} else if(mVideoEncData->vir_addr) {
 		LOG1("FREE the video buffer alloced before firstly");
 		destroyVideoEncBuffer();
 	}
-	
+
 	memset(mVideoEncData,0,sizeof(camera_ionbuf_t)* videoencbuf->mNumBffers);
-	
+
 	ret = createIonBuffer(videoencbuf);
 	if (ret == 0) {
 		LOG1("Video buffer information(phy:0x%x vir:0x%x size:0x%x)",
@@ -737,10 +737,10 @@ int IonDmaMemManager::createPreviewBuffer(struct bufferinfo_s* previewbuf)
 	LOG_FUNCTION_NAME
     int ret;
 	Mutex::Autolock lock(mLock);
-    
+
 	if(previewbuf->mBufType != PREVIEWBUFFER)
 		LOGE("the type is not PREVIEWBUFFER");
-    
+
 	if(!mPreviewData) {
 		mPreviewData = (camera_ionbuf_t*)malloc(sizeof(camera_ionbuf_t) * previewbuf->mNumBffers);
 		if(!mPreviewData){
@@ -752,9 +752,9 @@ int IonDmaMemManager::createPreviewBuffer(struct bufferinfo_s* previewbuf)
 		LOG1("FREE the preview buffer alloced before firstly");
 		destroyPreviewBuffer();
 	}
-    
+
 	memset(mPreviewData,0,sizeof(camera_ionbuf_t)* previewbuf->mNumBffers);
-    
+
     ret = createIonBuffer(previewbuf);
     if (ret == 0) {
         LOG1("Preview buffer information(phy:0x%x vir:0x%x size:0x%x)",
@@ -781,7 +781,7 @@ int IonDmaMemManager::createRawBuffer(struct bufferinfo_s* rawbuf)
 	LOG_FUNCTION_NAME
     int ret;
 	Mutex::Autolock lock(mLock);
-    
+
 	if (rawbuf->mBufType != RAWBUFFER)
 		LOGE("the type is not RAWBUFFER");
 
@@ -829,7 +829,7 @@ int IonDmaMemManager::destroyRawBuffer()
         destroyJpegBuffer();
     }
     memset(mJpegData,0,sizeof(camera_ionbuf_t)* jpegbuf->mNumBffers);
-    
+
     ret = createIonBuffer(jpegbuf);
     if (ret == 0) {
         LOG1("Jpeg buffer information(phy:0x%x vir:0x%x size:0x%x)",
@@ -888,12 +888,12 @@ int PmemManager::initPmem(char* devpath)
 	struct pmem_region sub;
 	int err = 0;
 	Mutex::Autolock lock(mLock);
-    
+
 	if(mPmemFd > 0) {
 		LOGE(" PMEM has been initialized");
 		return err;
 	}
-    
+
 	pmem_fd = open(devpath, O_RDWR);
 	if (pmem_fd < 0) {
 		LOGE("Open the PMEM device(%s): %s", devpath, strerror(errno));
@@ -913,7 +913,7 @@ int PmemManager::initPmem(char* devpath)
 	mPmemFd = mMemHeap->getHeapID();
 	if (mPmemFd < 0) {
 		LOGE("allocate mMemHeap from %s failed",devpath);
-		err = -1;		
+		err = -1;
 		goto exit;
 	}
 
@@ -933,8 +933,8 @@ exit:
             mMemHeapPmem.clear();
             mMemHeapPmem = NULL;
         }
-        
-        if (mMemHeap != NULL) {			
+
+        if (mMemHeap != NULL) {
 			mMemHeap.clear();
 			mMemHeap = NULL;
 		}
@@ -942,19 +942,19 @@ exit:
     if (pmem_fd > 0) {
 		close(pmem_fd);
 		pmem_fd = -1;
-	} 
+	}
     return err;
-}	
+}
 
 int PmemManager::deinitPmem()
 {
 	Mutex::Autolock lock(mLock);
 
-	if (mMemHeapPmem != NULL) { 		
+	if (mMemHeapPmem != NULL) {
 		mMemHeapPmem.clear();
 		mMemHeapPmem = NULL;
 	}
-	if (mMemHeap != NULL) {		
+	if (mMemHeap != NULL) {
 		mMemHeap.clear();
 		mMemHeap = NULL;
 	}
@@ -976,13 +976,13 @@ int PmemManager::createPreviewBuffer(struct bufferinfo_s* previewbuf)
 	int numBufs;
 	int frame_size;
 	Mutex::Autolock lock(mLock);
-    
+
 	if(!previewbuf || mMemHeapPmem == NULL){
 		LOGE("Pmem malloc preview buffer failed");
 		ret = -1;
 		goto null_fail;
 	}
-    
+
 	numBufs = previewbuf->mNumBffers;
 	frame_size = previewbuf->mPerBuffersize;
 	previewbuf->mBufferSizes = numBufs*PAGE_ALIGN(frame_size);
@@ -993,19 +993,19 @@ int PmemManager::createPreviewBuffer(struct bufferinfo_s* previewbuf)
         ret = -1;
         goto null_fail;
     }
-    
+
     mPreviewBuffer = (sp<IMemory>**)malloc(sizeof(sp<IMemory>*)*numBufs);
     if (mPreviewBuffer == NULL) {
         LOGE("mPreviewBuffer malloc failed");
         ret = -1;
         goto null_fail;
     }
-    
-	for(i = 0; i < numBufs; i++){        
+
+	for(i = 0; i < numBufs; i++){
         mPreviewBuffer[i] = (sp<IMemory>*)new (sp<IMemory>);
 		*mPreviewBuffer[i] = (static_cast<MemoryHeapPmem*>(mMemHeapPmem.get()))->mapMemory(PAGE_ALIGN(frame_size)*i,PAGE_ALIGN(frame_size));
 	}
-    
+
 	previewbuf->mPhyBaseAddr = mPmemHeapPhyBase + (*mPreviewBuffer[0])->offset();
 	previewbuf->mVirBaseAddr= (unsigned long)(*mPreviewBuffer[0])->pointer();
 	previewbuf->mPerBuffersize = PAGE_ALIGN(frame_size);
@@ -1014,7 +1014,7 @@ int PmemManager::createPreviewBuffer(struct bufferinfo_s* previewbuf)
         mPreviewBufferInfo.mPhyBaseAddr,mPreviewBufferInfo.mVirBaseAddr,mPreviewBufferInfo.mBufferSizes);
 
     LOG_FUNCTION_NAME_EXIT
-null_fail:        
+null_fail:
 	return ret;
 }
 int PmemManager::destroyPreviewBuffer()
@@ -1050,7 +1050,7 @@ int PmemManager::createRawBuffer(struct bufferinfo_s* rawbuf)
         ret = -1;
         goto null_fail;
     }
-    
+
     numBufs = rawbuf->mNumBffers;
     frame_size = rawbuf->mPerBuffersize;
     rawbuf->mBufferSizes = numBufs*PAGE_ALIGN(frame_size);
@@ -1063,7 +1063,7 @@ int PmemManager::createRawBuffer(struct bufferinfo_s* rawbuf)
     } else {
         map_start = mPreviewBufferInfo.mBufferSizes;
     }
-    
+
     mRawBuffer = (static_cast<MemoryHeapPmem*>(mMemHeapPmem.get()))->mapMemory(map_start,PAGE_ALIGN(frame_size)*numBufs);
     rawbuf->mPhyBaseAddr = mPmemHeapPhyBase + mRawBuffer->offset();
     rawbuf->mVirBaseAddr= (unsigned long)mRawBuffer->pointer();
@@ -1084,7 +1084,7 @@ int PmemManager::destroyRawBuffer()
     LOG_FUNCTION_NAME
     Mutex::Autolock lock(mLock);
 
-    if (mRawBuffer!= NULL) {        
+    if (mRawBuffer!= NULL) {
         mRawBuffer.clear();
         mRawBuffer = NULL;
     }
@@ -1106,11 +1106,11 @@ int PmemManager::createJpegBuffer(struct bufferinfo_s* jpegbuf)
         ret = -1;
         goto null_fail;
     }
-    
+
     numBufs = jpegbuf->mNumBffers;
     frame_size = jpegbuf->mPerBuffersize;
     jpegbuf->mBufferSizes = numBufs*PAGE_ALIGN(frame_size);
-    
+
     //compute the start address of map
     if ( mPmemSize < mPreviewBufferInfo.mBufferSizes + mRawBufferInfo.mBufferSizes +jpegbuf->mBufferSizes) {
         LOGE("Pmem is not enough for 0x%x bytes jpeg buffer!(Pmem:0x%x, Preview:0x%x, Raw:0x%x)",
@@ -1130,7 +1130,7 @@ int PmemManager::createJpegBuffer(struct bufferinfo_s* jpegbuf)
         mJpegBufferInfo.mPhyBaseAddr,mJpegBufferInfo.mVirBaseAddr,mJpegBufferInfo.mBufferSizes);
     LOG_FUNCTION_NAME_EXIT
     return ret;
-    
+
 null_fail:
     memset(&mJpegBufferInfo,0,sizeof(mJpegBufferInfo));
     return ret;
@@ -1155,7 +1155,7 @@ int PmemManager::flushCacheMem(buffer_type_enum buftype,unsigned int offset, uns
 	struct pmem_region region;
 	sp<IMemory> tmpmem;
     unsigned int i;
-	Mutex::Autolock lock(mLock);    
+	Mutex::Autolock lock(mLock);
 
 	switch(buftype)
 	{
@@ -1164,7 +1164,7 @@ int PmemManager::flushCacheMem(buffer_type_enum buftype,unsigned int offset, uns
 			break;
 		case RAWBUFFER:
 			tmpmem =mRawBuffer;
-            
+
 			break;
 		case JPEGBUFFER:
 			tmpmem =mJpegBuffer;
@@ -1175,7 +1175,7 @@ int PmemManager::flushCacheMem(buffer_type_enum buftype,unsigned int offset, uns
     region.offset = tmpmem->offset()+offset;
 	region.len = len;
 	ret = ioctl(mPmemFd,PMEM_CACHE_FLUSH, &region);
-    
+
     return ret;
 }
 /******************* pmem buffer end*****************/

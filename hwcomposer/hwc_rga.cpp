@@ -15,7 +15,7 @@ inline int HEIGHT(const hwc_rect &rect) { return rect.bottom - rect.top; }
 template<typename T> inline T max(T a, T b) { return (a > b) ? a : b; }
 template<typename T> inline T min(T a, T b) { return (a < b) ? a : b; }
 
-typedef struct 
+typedef struct
 {
 	int rga_fd;
 	int scale_type;
@@ -37,13 +37,13 @@ int init_rga_cfg(int rga_fd)
    g_rga_cfg.scale_type = NOT_TO_SCALE;
    return 0;
 }
- 
-bool is_land_screen(hwc_rect_t rect)
+
+static bool is_land_screen(hwc_rect_t rect)
 {
    return  (WIDTH(rect) > HEIGHT(rect)) ? true:false;
 }
 
-double is_scrop_by_width(int src_w, int src_h, int dst_w, int dst_h)
+static double is_scrop_by_width(int src_w, int src_h, int dst_w, int dst_h)
 {
    double t = 0.0;
    if (src_w > src_h)
@@ -61,7 +61,7 @@ double is_scrop_by_width(int src_w, int src_h, int dst_w, int dst_h)
    return t;
 }
 
-hwc_rect_t calculate_src_crop_center(hwc_rect_t src_rect, hwc_rect_t dst_rect, int transform)
+static hwc_rect_t calculate_src_crop_center(hwc_rect_t src_rect, hwc_rect_t dst_rect, int transform)
 {
 	hwc_rect_t crop;
 
@@ -94,14 +94,14 @@ hwc_rect_t calculate_src_crop_center(hwc_rect_t src_rect, hwc_rect_t dst_rect, i
 	return crop;
 }
 
-hwc_rect_t calculate_wfd_dst_crop_center(hwc_rect_t src_rect, hwc_rect_t dst_rect, int transform)
+static hwc_rect_t calculate_wfd_dst_crop_center(hwc_rect_t src_rect, hwc_rect_t dst_rect, int transform)
 {
 	hwc_rect_t crop;
         memset(&crop, 0, sizeof(hwc_rect_t));
 	switch (transform)
 	{
 	case 0:
-		if (is_land_screen(src_rect)) 
+		if (is_land_screen(src_rect))
 		{
 			crop.left = dst_rect.left;
 			crop.top = dst_rect.top;
@@ -126,12 +126,12 @@ hwc_rect_t calculate_wfd_dst_crop_center(hwc_rect_t src_rect, hwc_rect_t dst_rec
 		   }
 		   else
 		   {
-			  
+
 		   }
 		}
 		break;
 	case HWC_TRANSFORM_ROT_90:
-		if (is_land_screen(src_rect)) 
+		if (is_land_screen(src_rect))
 		{
 			int sh = WIDTH(src_rect);
 			int sw = HEIGHT(src_rect);
@@ -175,7 +175,7 @@ hwc_rect_t calculate_wfd_dst_crop_center(hwc_rect_t src_rect, hwc_rect_t dst_rec
 		}
 		break;
 	case HWC_TRANSFORM_ROT_180:
-		if (is_land_screen(src_rect)) 
+		if (is_land_screen(src_rect))
 		{
 			crop.left = dst_rect.left;
 			crop.top = dst_rect.top;
@@ -208,7 +208,7 @@ hwc_rect_t calculate_wfd_dst_crop_center(hwc_rect_t src_rect, hwc_rect_t dst_rec
 		}
 		break;
 	case HWC_TRANSFORM_ROT_270:
-		if (is_land_screen(src_rect)) 
+		if (is_land_screen(src_rect))
 		{
 			int sh = WIDTH(src_rect);
 			int sw = HEIGHT(src_rect);
@@ -257,7 +257,7 @@ hwc_rect_t calculate_wfd_dst_crop_center(hwc_rect_t src_rect, hwc_rect_t dst_rec
 	return crop;
 }
 
-void set_transform_cfg(int transform)
+static void set_transform_cfg(int transform)
 {
 	switch (transform)
 	{
@@ -287,7 +287,7 @@ void set_transform_cfg(int transform)
 	return ;
 }
 
-int get_wfd_transform(int transform)
+static int get_wfd_transform(int transform)
 {
 	switch (transform)
 	{
@@ -308,7 +308,7 @@ int get_wfd_transform(int transform)
 	}
 }
 
-void set_rga_offset(hwc_rect_t src_rect,hwc_rect_t dst_rect, int transform)
+static void set_rga_offset(hwc_rect_t src_rect,hwc_rect_t dst_rect, int transform)
 {
 	switch (transform)
 	{
@@ -371,7 +371,7 @@ void set_rga_offset(hwc_rect_t src_rect,hwc_rect_t dst_rect, int transform)
 	}
 }
 
-void set_scale_mode(hwc_rect_t src_rect,hwc_rect_t dst_rect, int transform)
+static void set_scale_mode(hwc_rect_t src_rect,hwc_rect_t dst_rect, int transform)
 {
 	double ws = 1.0*WIDTH(src_rect)/WIDTH(dst_rect);
 	double hs = 1.0*HEIGHT(src_rect)/HEIGHT(dst_rect);

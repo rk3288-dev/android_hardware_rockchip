@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 #include <utils/Log.h>
-#include <libexpat/expat.h>
+#include <expat.h>
 #include <dlfcn.h>
 #include <isi/isi_iss.h>
 
@@ -1374,7 +1374,8 @@ int camera_board_profiles::RegisterSensorDevice(rk_cam_total_info* pCamInfo)
             
             l = l->p_next;
         }
-    }else{
+    }else{
+
         ALOGE("ERROR: sensor dirver don't have chip id info\n");
         ret = RK_RET_DEVICEERR;
         goto power_off;
@@ -2057,14 +2058,16 @@ int camera_board_profiles::ProduceNewXml(camera_board_profiles* profiles)
         
         //write name to xml 
         err = WriteDevNameTOXML(profiles, default_file, temp_dst_file);
-        if(err){
+        if(err){
+
             ALOGE("write dev name to xml failed\n");
             goto end;
         }
 
         //modify xml
         err = ModifyMediaProfileXML( profiles, temp_dst_file, dst_file);
-        if(err){
+        if(err){
+
             ALOGE("modify xml failed\n");
             goto end;
         }

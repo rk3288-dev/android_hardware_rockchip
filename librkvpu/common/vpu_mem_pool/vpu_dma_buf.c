@@ -17,6 +17,8 @@
 
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <string.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 #include <linux/rockchip_ion.h>
@@ -127,15 +129,15 @@ static int ion_heap_type_test(int heap_mask)
     if (g_heap_mask != ION_HEAP_INVALID_ID) {
         return g_heap_mask;
     }
-        
+
     ion_client = ion_open();
 
-    if (ion_alloc(ion_client, 1, 0, heap_mask, 0, &handle) < 0) {
+    if (ion_alloc(ion_client, 1, 0, heap_mask, 0, (ion_user_handle_t *)&handle) < 0) {
         ion_close(ion_client);
         return ION_HEAP_INVALID_ID;
     }
 
-    ion_free(ion_client, handle);
+    ion_free(ion_client, (ion_user_handle_t)handle);
     ion_close(ion_client);
 
     g_heap_mask = heap_mask;
@@ -143,10 +145,10 @@ static int ion_heap_type_test(int heap_mask)
     return g_heap_mask;
 }
 
-inline int vpu_mem_judge_used_heaps_type()
+int vpu_mem_judge_used_heaps_type()
 {
     // TODO, use property_get
-    if (!VPUClientGetIOMMUStatus() > 0) {
+    if (VPUClientGetIOMMUStatus() <= 0) {
         if (ion_heap_type_test(ION_HEAP(ION_CARVEOUT_HEAP_ID)) == ION_HEAP(ION_CARVEOUT_HEAP_ID)) {
             ALOGV("USE ION_CARVEOUT_HEAP_ID");
             return ION_HEAP(ION_CARVEOUT_HEAP_ID);

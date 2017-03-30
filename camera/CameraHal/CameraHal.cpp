@@ -12,7 +12,7 @@
 #include <binder/IPCThreadState.h>
 
 #include <utils/CallStack.h>
-#include <camera/ICameraService.h>
+#include <android/hardware/ICameraService.h>
 #include <binder/IServiceManager.h>
 #include <binder/IMemory.h>
 
@@ -66,7 +66,7 @@ CameraHal::CameraHal(int cameraId)
           :commandThreadCommandQ("commandCmdQ")
 {
 	LOG_FUNCTION_NAME
-    
+
 	{
         char trace_level[PROPERTY_VALUE_MAX];
         int level;
@@ -74,7 +74,7 @@ CameraHal::CameraHal(int cameraId)
         property_get(CAMERAHAL_TRACE_LEVEL_PROPERTY_KEY, trace_level, "0");
 
         sscanf(trace_level,"%d",&level);
-        
+
         setTracerLevel(level);
 
 	}
@@ -99,7 +99,7 @@ CameraHal::CameraHal(int cameraId)
             LOG1("%s(%d): Camera Hal memory is alloced from %s device",__FUNCTION__,__LINE__,CAMERA_PMEM_NAME);
         }
     #endif
-    
+
     mPreviewBuf = new PreviewBufferProvider(mCamMemManager);
     mVideoBuf = new BufferProvider(mCamMemManager);
     mRawBuf = new BufferProvider(mCamMemManager);
@@ -109,7 +109,7 @@ CameraHal::CameraHal(int cameraId)
 	mVideoBuf->is_cif_driver = false;
 	mRawBuf->is_cif_driver = false;
 	mJpegBuf->is_cif_driver = false;
-	
+
     char value[PROPERTY_VALUE_MAX];
     property_get(/*CAMERAHAL_TYPE_PROPERTY_KEY*/"sys.cam_hal.type", value, "none");
 
@@ -144,8 +144,8 @@ CameraHal::CameraHal(int cameraId)
 			mJpegBuf->is_cif_driver = true;
 	    }
     }
-    
-    //initialize    
+
+    //initialize
     {
         char *call_process = getCallingProcess();
 	    if(strstr(call_process,"com.android.cts.verifier")) {
@@ -157,15 +157,15 @@ CameraHal::CameraHal(int cameraId)
 
     mDisplayAdapter = new DisplayAdapter();
     mEventNotifier = new AppMsgNotifier(mCameraAdapter);
-    
+
     mCameraAdapter->setEventNotifierRef(*mEventNotifier);
     mCameraAdapter->initialize();
     updateParameters(mParameters);
     mCameraAdapter->setPreviewBufProvider(mPreviewBuf);
     mCameraAdapter->setDisplayAdapterRef(*mDisplayAdapter);
-    
+
     mDisplayAdapter->setFrameProvider(mCameraAdapter);
-    
+
     mEventNotifier->setPictureRawBufProvider(mRawBuf);
     mEventNotifier->setPictureJpegBufProvider(mJpegBuf);
     mEventNotifier->setVideoBufProvider(mVideoBuf);
@@ -183,12 +183,12 @@ CameraHal::CameraHal(int cameraId)
 #else
 		const char* cameraCallProcess = getCallingProcess();
         if (strstr(CONFIG_CAMERA_FRONT_MIRROR_MDATACB_APK,cameraCallProcess)) {
-            dataCbFrontMirror = true; 
+            dataCbFrontMirror = true;
         } else {
             dataCbFrontMirror = false;
         }
         if (strstr(CONFIG_CAMERA_FRONT_FLIP_MDATACB_APK,cameraCallProcess)) {
-            dataCbFrontFlip = true; 
+            dataCbFrontFlip = true;
         } else {
             dataCbFrontFlip = false;
         }
@@ -199,7 +199,7 @@ CameraHal::CameraHal(int cameraId)
     }
 #else
     dataCbFrontMirror = false;
-#endif 
+#endif
 	mEventNotifier->setDatacbFrontMirrorFlipState(dataCbFrontMirror,dataCbFrontFlip);
 
       // register for sensor events
@@ -213,12 +213,12 @@ CameraHal::CameraHal(int cameraId)
             mSensorListener.clear();
             mSensorListener = NULL;
         }
-    }  
+    }
 
-    
+
 	LOG_FUNCTION_NAME_EXIT
 
-    
+
 }
 
 
@@ -240,7 +240,7 @@ CameraHal::~CameraHal()
         mSensorListener.clear();
         mSensorListener = NULL;
     }
-    
+
     if(mDisplayAdapter){
         delete mDisplayAdapter;
         mDisplayAdapter = NULL;
@@ -263,7 +263,7 @@ CameraHal::~CameraHal()
     }
     if(mRawBuf){
         delete mRawBuf;
-        mRawBuf = NULL; 
+        mRawBuf = NULL;
     }
     if(mJpegBuf){
         delete mJpegBuf;
@@ -274,7 +274,7 @@ CameraHal::~CameraHal()
         mCamMemManager =NULL;
     }
 	if(mCommandThread != NULL){
-        Message_cam msg;  
+        Message_cam msg;
         Semaphore sem;
         msg.command = CMD_EXIT;
         sem.Create();
@@ -296,15 +296,15 @@ CameraHal::~CameraHal()
 void CameraHal::release()
 {
 	LOG_FUNCTION_NAME
-    Mutex::Autolock lock(mLock);  
+    Mutex::Autolock lock(mLock);
 	LOG_FUNCTION_NAME_EXIT
 }
 
 
 int CameraHal::setPreviewWindow(struct preview_stream_ops *window)
 {
-    LOG_FUNCTION_NAME  
-    Message_cam msg;  
+    LOG_FUNCTION_NAME
+    Message_cam msg;
     Semaphore sem;
     Mutex::Autolock lock(mLock);
     if ((mCommandThread != NULL)) {
@@ -318,7 +318,7 @@ int CameraHal::setPreviewWindow(struct preview_stream_ops *window)
             sem.Wait();
         }
 		if(mCameraStatus&CMD_SET_PREVIEW_WINDOW_DONE)
-			LOG1("set preview window OK.");		
+			LOG1("set preview window OK.");
     }
 	LOG_FUNCTION_NAME_EXIT
     return 0;
@@ -328,7 +328,7 @@ int CameraHal::setPreviewWindow(struct preview_stream_ops *window)
 int CameraHal::startPreview()
 {
     LOG_FUNCTION_NAME
-    Message_cam msg;    
+    Message_cam msg;
     Mutex::Autolock lock(mLock);
     if ((mCommandThread != NULL)) {
         msg.command = CMD_PREVIEW_START;
@@ -345,8 +345,8 @@ int CameraHal::startPreview()
 //MUST SYNC
 void CameraHal::stopPreview()
 {
-    LOG_FUNCTION_NAME  
-    Message_cam msg; 
+    LOG_FUNCTION_NAME
+    Message_cam msg;
     Semaphore sem;
     Mutex::Autolock lock(mLock);
     if ((mCommandThread != NULL)) {
@@ -370,9 +370,9 @@ void CameraHal::setCallbacks(camera_notify_callback notify_cb,
             camera_data_callback data_cb,
             camera_data_timestamp_callback data_cb_timestamp,
             camera_request_memory get_memory,
-            void *user)                                   
+            void *user)
 {
-    LOG_FUNCTION_NAME  
+    LOG_FUNCTION_NAME
     Mutex::Autolock lock(mLock);
     mEventNotifier->setCallbacks(notify_cb, data_cb,data_cb_timestamp,get_memory,user,&mLock);
     LOG_FUNCTION_NAME_EXIT
@@ -386,7 +386,7 @@ void CameraHal::enableMsgType(int32_t msgType)
         //mParameters is sync
         int w,h;
         const char * fmt=  mParameters.getPreviewFormat();
-		mParameters.getPreviewSize(&w, &h); 
+		mParameters.getPreviewSize(&w, &h);
         mEventNotifier->setPreviewDataCbRes(w, h, fmt);
     }
     mEventNotifier->enableMsgType(msgType);
@@ -410,10 +410,10 @@ int CameraHal::msgTypeEnabled(int32_t msgType)
 int CameraHal::autoFocus()
 {
     LOG_FUNCTION_NAME
-    Message_cam msg; 
+    Message_cam msg;
     Semaphore sem;
     Mutex::Autolock lock(mLock);
-    
+
     if ((mCommandThread != NULL)) {
         msg.command = CMD_AF_START;
         sem.Create();
@@ -433,7 +433,7 @@ int CameraHal::autoFocus()
 int CameraHal::cancelAutoFocus()
 {
     LOG_FUNCTION_NAME
-    Message_cam msg; 
+    Message_cam msg;
     Semaphore sem;
     Mutex::Autolock lock(mLock);
     if ((mCommandThread != NULL)) {
@@ -441,7 +441,7 @@ int CameraHal::cancelAutoFocus()
         sem.Create();
         msg.arg1 = NULL;
         commandThreadCommandQ.put(&msg);
-     
+
     }
 
     LOG_FUNCTION_NAME_EXIT
@@ -483,7 +483,7 @@ int CameraHal::startRecording()
     setParametersUnlock(mParameters);
     updateParameters(mParameters);
     #endif
-    
+
     //notify event
     mEventNotifier->startRecording(recordW,recordH);
     //mRecordRunning = true;
@@ -519,8 +519,8 @@ void CameraHal::releaseRecordingFrame(const void *opaque)
 
 int CameraHal::takePicture()
 {
-    LOG_FUNCTION_NAME  
-    Message_cam msg;    
+    LOG_FUNCTION_NAME
+    Message_cam msg;
     Semaphore sem;
     Mutex::Autolock lock(mLock);
     if ((mCommandThread != NULL)) {
@@ -544,8 +544,8 @@ int CameraHal::takePicture()
 
 int CameraHal::cancelPicture()
 {
-    LOG_FUNCTION_NAME  
-    Message_cam msg;    
+    LOG_FUNCTION_NAME
+    Message_cam msg;
     Semaphore sem;
     Mutex::Autolock lock(mLock);
     if ((mCommandThread != NULL)) {
@@ -585,7 +585,7 @@ int CameraHal::setParameters(const CameraParameters &params_set)
 
     }
 
-    Message_cam msg;    
+    Message_cam msg;
     Semaphore sem;
     Mutex::Autolock lock(mLock);
     if ((mCommandThread != NULL)) {
@@ -620,7 +620,7 @@ int CameraHal::setParametersUnlock(const CameraParameters &params_set)
 
     }
 
-    Message_cam msg;    
+    Message_cam msg;
     Semaphore sem;
     if ((mCommandThread != NULL)) {
         msg.command = CMD_SET_PARAMETERS;
@@ -642,7 +642,7 @@ char* CameraHal::getParameters()
     char* params_string;
     const char * valstr = NULL;
     CameraParameters mParams = mParameters;
-    
+
     params_str8 = mParams.flatten();
 
     // camera service frees this string...
@@ -672,7 +672,7 @@ int CameraHal::sendCommand(int32_t cmd, int32_t arg1, int32_t arg2)
         }
         LOGD("sendCommand start face detection ");
         enableMsgType(CAMERA_MSG_PREVIEW_METADATA);
-        Message_cam msg;    
+        Message_cam msg;
         if ((mCommandThread != NULL)) {
             msg.command = CMD_START_FACE_DETECTION;
             msg.arg1 = (void*)(NULL);
@@ -694,7 +694,7 @@ int CameraHal::sendCommand(int32_t cmd, int32_t arg1, int32_t arg2)
 
 
 int CameraHal::dump(int fd)
-{   
+{
     int i;
     char trace_level[PROPERTY_VALUE_MAX];
     int level;
@@ -702,9 +702,9 @@ int CameraHal::dump(int fd)
     property_get(CAMERAHAL_TRACE_LEVEL_PROPERTY_KEY, trace_level, "0");
 
     sscanf(trace_level,"%d",&level);
-    
+
     setTracerLevel(level);
-    
+
     commandThreadCommandQ.dump();
     if(mCameraAdapter)
         mCameraAdapter->dump(mCamId);
@@ -713,20 +713,20 @@ int CameraHal::dump(int fd)
     if(mEventNotifier)
         mEventNotifier->dump();
 
-    
+
     return 0;
 }
 int CameraHal::getCameraFd()
 {
     Mutex::Autolock lock(mLock);
-    
-    return mCameraAdapter->getCameraFd();  
+
+    return mCameraAdapter->getCameraFd();
 }
 
 int CameraHal::getCameraId()
 {
-    
-    return mCamId;  
+
+    return mCamId;
 }
 
 
@@ -736,7 +736,7 @@ int CameraHal::selectPreferedDrvSize(int *width,int * height,bool is_capture)
 }
 int CameraHal::fillPicturInfo(picture_info_s& picinfo)
 {
-	mParameters.getPictureSize(&picinfo.w, &picinfo.h);				 
+	mParameters.getPictureSize(&picinfo.w, &picinfo.h);
 	picinfo.quality= mParameters.getInt("jpeg-quality");
     picinfo.rotation = strtol(mParameters.get(CameraParameters::KEY_ROTATION),0,0);
 	picinfo.thumbquality= strtol(mParameters.get(CameraParameters::KEY_JPEG_THUMBNAIL_QUALITY),0,0);
@@ -744,7 +744,7 @@ int CameraHal::fillPicturInfo(picture_info_s& picinfo)
 	picinfo.thumbheight= strtol(mParameters.get(CameraParameters::KEY_JPEG_THUMBNAIL_HEIGHT),0,0);
 
     // gps longitude
-    const char *new_gps_longitude_str = mParameters.get(CameraParameters::KEY_GPS_LONGITUDE);    
+    const char *new_gps_longitude_str = mParameters.get(CameraParameters::KEY_GPS_LONGITUDE);
     if (new_gps_longitude_str) {
         picinfo.longtitude= strtod(new_gps_longitude_str,NULL);
     } else {
@@ -758,7 +758,7 @@ int CameraHal::fillPicturInfo(picture_info_s& picinfo)
     } else {
         picinfo.altitude = -1;
     }
-	
+
     // gps latitude
     const char *new_gps_latitude_str = mParameters.get(CameraParameters::KEY_GPS_LATITUDE);
     if (new_gps_latitude_str) {
@@ -780,23 +780,23 @@ int CameraHal::fillPicturInfo(picture_info_s& picinfo)
         strcpy(picinfo.getMethod,getMethod);
     //focus length
     picinfo.focalen = strtol(mParameters.get(CameraParameters::KEY_FOCAL_LENGTH),0,0);
-	//flash 
+	//flash
 	if (mParameters.get(CameraParameters::KEY_SUPPORTED_FLASH_MODES) && mParameters.get(CameraParameters::KEY_FLASH_MODE)) {
 		if (!strcmp(CameraParameters::FLASH_MODE_OFF, mParameters.get(CameraParameters::KEY_FLASH_MODE))) {
 			picinfo.flash = 0;
 		} else {
 			picinfo.flash = mCameraAdapter->getFlashStatus();
-		}	 
+		}
 	} else {
 		picinfo.flash = 0;
 	}
-	//white balance 
+	//white balance
 	if (mParameters.get(CameraParameters::KEY_SUPPORTED_WHITE_BALANCE) && mParameters.get(CameraParameters::KEY_WHITE_BALANCE)) {
 		if (!strcmp(CameraParameters::WHITE_BALANCE_AUTO, mParameters.get(CameraParameters::KEY_WHITE_BALANCE))) {
 			picinfo.whiteBalance = 0;
 		} else {
 			picinfo.whiteBalance = 1;
-		}	 
+		}
 	} else {
 		picinfo.whiteBalance = 0;
 	}
@@ -828,18 +828,18 @@ get_command:
         switch(msg.command)
         {
             case CMD_PREVIEW_START:
-            { 
+            {
                 LOGD("%s(%d):receive CMD_PREVIEW_START",__FUNCTION__,__LINE__);
 
             RESTART_PREVIEW_INTERNAL:
-                
+
                 //2. current preview status ?
                 mParameters.getPreviewSize(&app_previw_w,&app_preview_h);
                 prevStatus = mCameraAdapter->getCurPreviewState(&drv_w,&drv_h);
                 int prefered_w = app_previw_w, prefered_h = app_preview_h;
                 selectPreferedDrvSize(&prefered_w,&prefered_h,false);
-                
-                if(prevStatus){                    
+
+                if(prevStatus){
                     //get preview size
                     if((prefered_w != drv_w) || (prefered_h != drv_h)){
 
@@ -848,7 +848,7 @@ get_command:
         					if(err != -1)
         						setCamStatus(STA_DISPLAY_PAUSE, 1);
                         }
-                        
+
                         //stop eventnotify
                         mEventNotifier->stopReceiveFrame();
                         //need to stop preview.
@@ -866,7 +866,7 @@ get_command:
 						if(err != 0)
 							goto PREVIEW_START_OUT;
                     }
-                        
+
                 }else{
 
                     if (mDisplayAdapter->getDisplayStatus() == DisplayAdapter::STA_DISPLAY_RUNNING) {
@@ -874,7 +874,7 @@ get_command:
     					if(err != -1)
     						setCamStatus(STA_DISPLAY_PAUSE, 1);
                     }
-                
+
                     drv_w = prefered_w;
                     drv_h = prefered_h;
                     //stop eventnotify
@@ -886,7 +886,7 @@ get_command:
                     if(mEventNotifier->msgEnabled(CAMERA_MSG_PREVIEW_FRAME))
                         mEventNotifier->startReceiveFrame();
                 }
-                
+
                 if(mDisplayAdapter->getPreviewWindow())
                 {
                     if (mDisplayAdapter->getDisplayStatus() != DisplayAdapter::STA_DISPLAY_RUNNING) {
@@ -897,9 +897,9 @@ get_command:
     						goto PREVIEW_START_OUT;
                     }
             	}
-				
+
 				setCamStatus(CMD_PREVIEW_START_DONE, 1);
-				PREVIEW_START_OUT:	
+				PREVIEW_START_OUT:
                 if(msg.arg1)
                     ((Semaphore*)(msg.arg1))->Signal();
                 LOGD("%s(%d): CMD_PREVIEW_START out",__FUNCTION__,__LINE__);
@@ -924,9 +924,9 @@ get_command:
 				if(err != 0)
 					goto CMD_PREVIEW_STOP_OUT;
                 //wake up wait thread.
-                
-				setCamStatus(CMD_PREVIEW_STOP_DONE, 1);  
-		CMD_PREVIEW_STOP_OUT:			
+
+				setCamStatus(CMD_PREVIEW_STOP_DONE, 1);
+		CMD_PREVIEW_STOP_OUT:
                 if(msg.arg1)
                     ((Semaphore*)(msg.arg1))->Signal();
                 LOGD("%s(%d): CMD_PREVIEW_STOP out",__FUNCTION__,__LINE__);
@@ -946,8 +946,8 @@ get_command:
                 } else {
                     LOG1("%s(%d): not start display now",__FUNCTION__,__LINE__);
                 }
-				
-				setCamStatus(CMD_SET_PREVIEW_WINDOW_DONE, 1);				
+
+				setCamStatus(CMD_SET_PREVIEW_WINDOW_DONE, 1);
                 if(msg.arg1)
                     ((Semaphore*)(msg.arg1))->Signal();
                 LOGD("%s(%d): CMD_SET_PREVIEW_WINDOW out",__FUNCTION__,__LINE__);
@@ -976,27 +976,27 @@ get_command:
                     goto RESTART_PREVIEW_INTERNAL;
                 }
                 break;
-                    
+
             }
             case CMD_PREVIEW_CAPTURE_CANCEL:
             {
                 LOGD("%s(%d): receive CMD_PREVIEW_CAPTURE_CANCEL", __FUNCTION__,__LINE__);
                 mEventNotifier->flushPicture();
-				setCamStatus(CMD_PREVIEW_CAPTURE_CANCEL_DONE, 1);	
+				setCamStatus(CMD_PREVIEW_CAPTURE_CANCEL_DONE, 1);
                 //reset pic num to 1
                 mParameters.set(KEY_CONTINUOUS_PIC_NUM,"1");
                 mCameraAdapter->setParameters(mParameters,isRestartPreview);
                 if(msg.arg1)
                     ((Semaphore*)(msg.arg1))->Signal();
                 LOGD("%s(%d): CMD_PREVIEW_CAPTURE_CANCEL out",__FUNCTION__,__LINE__);
-                break; 
+                break;
             }
     	    case CMD_CONTINUOS_PICTURE:
              {
     			LOGD("%s(%d): receive CMD_CONTINUOS_PICTURE", __FUNCTION__,__LINE__);
                 int pic_num = strtod(mParameters.get(KEY_CONTINUOUS_PIC_NUM),NULL);
 				mParameters.getPictureSize(&picture_w, &picture_h);
-                //need to pause display(is recording? is continuous picture ?) 
+                //need to pause display(is recording? is continuous picture ?)
                 //if(!mRecordRunning && (pic_num == 1)){
                 if(!(mCameraStatus&STA_RECORD_RUNNING) && (pic_num == 1)){
                     err=mDisplayAdapter->pauseDisplay();
@@ -1019,11 +1019,11 @@ get_command:
 							setCamStatus(STA_DISPLAY_PAUSE, 1);
                         //stop eventnotify
                         mEventNotifier->stopReceiveFrame();
-                        
+
 						err =mCameraAdapter->stopPreview();
 						if(err != 0)
 							goto CMD_CONTINUOS_PICTURE_OUT;
-						
+
                         //set new drv size;
                         drv_w = prefered_w;
                         drv_h = prefered_h;
@@ -1045,7 +1045,7 @@ get_command:
 						/*for soc caemra flash control when preview size == picture size*/
 						err = mCameraAdapter->flashcontrol();
 					}
-                        
+
                 }else{
                     //selet a proper preview size.
                     LOGD("%s(%d):WARNING,take pic before start preview!",__FUNCTION__,__LINE__);
@@ -1053,13 +1053,13 @@ get_command:
 					if(err != 0)
 						goto CMD_CONTINUOS_PICTURE_OUT;
                 }
-                //take picture           
+                //take picture
                 picinfo.num = pic_num;
                 fillPicturInfo(picinfo);
                 mEventNotifier->takePicture(picinfo);
 
 				setCamStatus(CMD_CONTINUOS_PICTURE_DONE, 1);
-			CMD_CONTINUOS_PICTURE_OUT:				
+			CMD_CONTINUOS_PICTURE_OUT:
                 if(msg.arg1)
                     ((Semaphore*)(msg.arg1))->Signal();
                 LOGD("%s(%d): CMD_CONTINUOS_PICTURE out",__FUNCTION__,__LINE__);
@@ -1069,18 +1069,18 @@ get_command:
             {
                 LOGD("%s(%d): receive CMD_AF_START", __FUNCTION__,__LINE__);
                 mCameraAdapter->autoFocus();
-                
+
 				setCamStatus(CMD_AF_START_DONE, 1);
                 if(msg.arg1)
-                    ((Semaphore*)(msg.arg1))->Signal();				
+                    ((Semaphore*)(msg.arg1))->Signal();
 				LOGD("%s(%d): exit receive CMD_AF_START", __FUNCTION__,__LINE__);
                 break;
-            }            
+            }
             case CMD_AF_CANCEL:
             {
                 LOGD("%s(%d): receive CMD_AF_CANCEL", __FUNCTION__,__LINE__);
                 mCameraAdapter->cancelAutoFocus();
-                setCamStatus(CMD_AF_CANCEL_DONE, 1);					
+                setCamStatus(CMD_AF_CANCEL_DONE, 1);
                 if(msg.arg1)
                     ((Semaphore*)(msg.arg1))->Signal();
                 break;
@@ -1094,12 +1094,12 @@ get_command:
             {
                 LOGD("%s(%d): receive CMD_EXIT", __FUNCTION__,__LINE__);
                 shouldLive = false;
-				
-				setCamStatus(CMD_EXIT_DONE, 1);			
+
+				setCamStatus(CMD_EXIT_DONE, 1);
                 if(msg.arg1)
                     ((Semaphore*)(msg.arg1))->Signal();
                 break;
-            }                
+            }
             default:
                 LOGE("%s(%d) receive unknow command(0x%x)\n", __FUNCTION__,__LINE__,msg.command);
                 break;
@@ -1122,7 +1122,7 @@ int CameraHal::checkCamStatus(int cmd)
 		case CMD_PREVIEW_STOP:
 		{
 			if((mCameraStatus&STA_DISPLAY_STOP))
-				err = -1;			
+				err = -1;
 			break;
 		}
 		case CMD_SET_PREVIEW_WINDOW:
@@ -1130,29 +1130,29 @@ int CameraHal::checkCamStatus(int cmd)
 			if((mCameraStatus&STA_DISPLAY_RUNNING) || (mCameraStatus&STA_RECORD_RUNNING))
 				err = -1;
 			break;
-		}		
+		}
 		case CMD_SET_PARAMETERS:
 		{
-			break;			
-		}	
+			break;
+		}
 		case CMD_PREVIEW_CAPTURE_CANCEL:
 		{
-			break;			
+			break;
 		}
 		case CMD_CONTINUOS_PICTURE:
 		{
 			if((mCameraStatus&STA_DISPLAY_RUNNING)==0x0)
-				err = -1;			
-			break;			
-		}	
+				err = -1;
+			break;
+		}
 		case CMD_AF_START:
 		{
-			break;			
-		}	
+			break;
+		}
 		case CMD_AF_CANCEL:
 		{
-			break;			
-		}			
+			break;
+		}
 	}
 
 
@@ -1195,7 +1195,7 @@ void CameraHal::setCamStatus(int status, int type)
 		}
 
 		if(status&CMD_SET_PARAMETERS_PREPARE)
-		{   
+		{
 			mCameraStatus &= ~CMD_SET_PARAMETERS_MASK;
 			mCameraStatus |= CMD_SET_PARAMETERS_PREPARE;
 		}
@@ -1296,7 +1296,7 @@ void CameraHal::setCamStatus(int status, int type)
 		if(status&STA_PREVIEW_CMD_RECEIVED)
 		{
 			mCameraStatus &= ~STA_PREVIEW_CMD_RECEIVED;
-		}		
+		}
 	}
 }
 }; // namespace android

@@ -71,8 +71,7 @@ extern "C" {
 
 #define INV_VERSION  "InvenSense MPL" " " \
     "v" INV_VERSION_MAJOR_STR "." INV_VERSION_MINOR_STR "." INV_VERSION_SUB_MINOR_STR " " \
-    INV_VERSION_TYPE \
-    __DATE__ " " __TIME__
+    INV_VERSION_TYPE
 
 /*************************************************************************/
 /*  Motion processing engines                                            */
@@ -532,7 +531,7 @@ struct inv_obj_t {
     inv_error_t inv_update_bias(void);
     void inv_start_bias_calc(void);
     void inv_stop_bias_calc(void);
-    
+
     // Private functions shared accross modules
     void inv_init_ml(void);
 	void inv_init_ml_cb(void);

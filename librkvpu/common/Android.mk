@@ -1,5 +1,7 @@
 # Copyright 2006 The Android Open Source Project
+
 LOCAL_PATH:= $(call my-dir)
+
 BUILD_VPU_MEM_TEST := false
 BUILD_VPU_TEST := false
 BUILD_PPOP_TEST := false
@@ -13,10 +15,12 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := libvpu
 
 ifeq ($(PLATFORM_VERSION),4.0.4)
-	LOCAL_CFLAGS := -DAVS40 \
-	-Wno-multichar 
+LOCAL_CFLAGS := \
+    -DAVS40 \
+    -Wno-multichar
 else
-	LOCAL_CFLAGS += -Wno-multichar 
+LOCAL_CFLAGS += \
+    -Wno-multichar
 endif
 
 LOCAL_ARM_MODE := arm
@@ -27,25 +31,29 @@ LOCAL_PRELINK_MODULE := false
 LOCAL_SHARED_LIBRARIES := libcutils libion
 LOCAL_STATIC_LIBRARIES := #ibion_vpu #libvpu_mem_pool
 
-LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-		    $(LOCAL_PATH)/.. \
-		    $(LOCAL_PATH)/include \
-		    $(LOCAL_PATH)/libvpu_mem_pool \
-		    $(TOP)/hardware/libhardware/include \
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH) \
+    $(LOCAL_PATH)/.. \
+    $(LOCAL_PATH)/include \
+    $(LOCAL_PATH)/libvpu_mem_pool \
+    hardware/libhardware/include
 
 LOCAL_C_INCLUDES += \
-        system/core/libion/include \
-        system/core/libion/kernel-headers
-LOCAL_SRC_FILES := vpu_mem_dmabuf.c \
-				   rk_list.cpp \
-				   vpu_mem_pool/vpu_mem_pool.c \
-				   vpu_mem_pool/vpu_dma_buf.c \
-				   vpu.c \
-				   vpu_mem_pool/tsemaphore.c	\
-				   ppOp.cpp
+    system/core/libion/include \
+    system/core/libion/kernel-headers
+
+LOCAL_SRC_FILES := \
+    vpu_mem_dmabuf.c \
+    rk_list.cpp \
+    vpu_mem_pool/vpu_mem_pool.c \
+    vpu_mem_pool/vpu_dma_buf.c \
+    vpu.c \
+    vpu_mem_pool/tsemaphore.c \
+    ppOp.cpp
 
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_SHARED_LIBRARY)
+
 
 ifeq ($(BUILD_VPU_MEM_TEST),true)
 include $(CLEAR_VARS)
@@ -56,13 +64,14 @@ LOCAL_PRELINK_MODULE := false
 
 LOCAL_SHARED_LIBRARIES := libion libvpu libcutils
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-		    $(LOCAL_PATH)/.. \
-		    $(LOCAL_PATH)/include \
-		    $(TOP)/hardware/libhardware/include
+            $(LOCAL_PATH)/.. \
+            $(LOCAL_PATH)/include \
+            $(TOP)/hardware/libhardware/include
 LOCAL_SRC_FILES := vpu_mem.c
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_EXECUTABLE)
-endif
+endif # BUILD_VPU_MEM_TEST
+
 
 ifeq ($(BUILD_VPU_TEST),true)
 include $(CLEAR_VARS)
@@ -72,13 +81,13 @@ LOCAL_ARM_MODE := arm
 LOCAL_PRELINK_MODULE := false
 LOCAL_SHARED_LIBRARIES := libion libvpu libcutils
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-		    $(LOCAL_PATH)/.. \
-		    $(LOCAL_PATH)/include \
-		    $(TOP)/hardware/libhardware/include
+            $(LOCAL_PATH)/.. \
+            $(LOCAL_PATH)/include \
+            $(TOP)/hardware/libhardware/include
 LOCAL_SRC_FILES := vpu.c
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_EXECUTABLE)
-endif
+endif # BUILD_VPU_TEST
 
 
 ifeq ($(BUILD_PPOP_TEST),true)
@@ -89,13 +98,15 @@ LOCAL_ARM_MODE := arm
 LOCAL_PRELINK_MODULE := false
 LOCAL_SHARED_LIBRARIES := libion libvpu libcutils
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-		    $(LOCAL_PATH)/.. \
-		    $(LOCAL_PATH)/include \
-		    $(TOP)/hardware/libhardware/include
+            $(LOCAL_PATH)/.. \
+            $(LOCAL_PATH)/include \
+            $(TOP)/hardware/libhardware/include
 LOCAL_SRC_FILES := ppOp.cpp
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_EXECUTABLE)
-endif
+endif # BUILD_PPOP_TEST
+
+
 ifeq ($(BUILD_RK_LIST_TEST),true)
 include $(CLEAR_VARS)
 LOCAL_MODULE := rk_list_test
@@ -104,13 +115,14 @@ LOCAL_ARM_MODE := arm
 LOCAL_PRELINK_MODULE := false
 LOCAL_SHARED_LIBRARIES := libion libvpu libcutils
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-		    $(LOCAL_PATH)/.. \
-		    $(LOCAL_PATH)/include \
-		    $(TOP)/hardware/libhardware/include
+            $(LOCAL_PATH)/.. \
+            $(LOCAL_PATH)/include \
+            $(TOP)/hardware/libhardware/include
 LOCAL_SRC_FILES := rk_list.cpp
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_EXECUTABLE)
-endif
+endif # BUILD_RK_LIST_TEST
+
 
 #
 # vpu_mem_test
@@ -119,12 +131,12 @@ ifeq ($(BUILD_VPU_MEM_R_TEST),true)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := \
-	vpu_mem_test.c
+    vpu_mem_test.c
 
 LOCAL_SHARED_LIBRARIES := \
-	libcutils \
-	libvpu \
-	libion 
+    libcutils \
+    libvpu \
+    libion
 
 #LOCAL_STATIC_LIBRARIES := libion_vpu libvpu_mem_pool
 
@@ -134,7 +146,8 @@ LOCAL_PRELINK_MODULE := false
 
 include $(BUILD_EXECUTABLE)
 
-endif
+endif # BUILD_VPU_MEM_R_TEST
+
 
 #
 # vpu_mem_dump
@@ -143,13 +156,13 @@ ifeq ($(BUILD_VPU_MEM_DUMP),true)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := \
-	vpu_mem_dmabuf.c \
-	vpu_mem_pool/vpu_dma_buf.c
+    vpu_mem_dmabuf.c \
+    vpu_mem_pool/vpu_dma_buf.c
 
 LOCAL_SHARED_LIBRARIES := \
-	libcutils \
-	libvpu \
-	libion 
+    libcutils \
+    libvpu \
+    libion
 
 #LOCAL_STATIC_LIBRARIES := libion_vpu libvpu_mem_pool
 
@@ -160,15 +173,16 @@ LOCAL_PRELINK_MODULE := false
 LOCAL_CFLAGS += -DCONFIG_DUMP_VPU_MEM_APP
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-		    $(LOCAL_PATH)/.. \
-		    $(LOCAL_PATH)/include \
-		    $(LOCAL_PATH)/vpu_mem_pool \
-		    $(TOP)/system/core/include \
-		    $(TOP)/hardware/libhardware/include
+            $(LOCAL_PATH)/.. \
+            $(LOCAL_PATH)/include \
+            $(LOCAL_PATH)/vpu_mem_pool \
+            $(TOP)/system/core/include \
+            $(TOP)/hardware/libhardware/include
 
 include $(BUILD_EXECUTABLE)
 
-endif
+endif # BUILD_VPU_MEM_DUMP
+
 
 #
 # vpu_mem_pool_test
@@ -177,14 +191,14 @@ ifeq ($(BUILD_VPU_POOL_TEST),true)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := \
-	vpu_mem_pool/vpu_dma_buf.c \
-	vpu_mem_pool/vpu_mem_pool.c \
-	vpu_mem_pool/tsemaphore.c \
-	vpu.c
+    vpu_mem_pool/vpu_dma_buf.c \
+    vpu_mem_pool/vpu_mem_pool.c \
+    vpu_mem_pool/tsemaphore.c \
+    vpu.c
 
 LOCAL_SHARED_LIBRARIES := \
-	libcutils \
-	libion 
+    libcutils \
+    libion
 
 #LOCAL_STATIC_LIBRARIES := libion_vpu libvpu_mem_pool
 
@@ -195,13 +209,14 @@ LOCAL_PRELINK_MODULE := false
 LOCAL_CFLAGS += -DVPU_MEMORY_BLOCK_TEST -DVPU_MBLK_DEBUG
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-		    $(LOCAL_PATH)/.. \
-		    $(LOCAL_PATH)/include \
-		    $(LOCAL_PATH)/vpu_mem_pool \
-		    $(TOP)/system/core/include
+            $(LOCAL_PATH)/.. \
+            $(LOCAL_PATH)/include \
+            $(LOCAL_PATH)/vpu_mem_pool \
+            $(TOP)/system/core/include
 
 include $(BUILD_EXECUTABLE)
 
-endif
+endif # BUILD_VPU_POOL_TEST
+
 
 include $(call all-makefiles-under,$(LOCAL_PATH))

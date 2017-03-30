@@ -38,7 +38,7 @@ typedef struct vpu_dmabuf_dev {
     vpu_dmabuf_dev_FIELDS
 } vpu_dmabuf_dev;
 
-inline int vpu_mem_judge_used_heaps_type();
+int vpu_mem_judge_used_heaps_type();
 
 int vpu_dmabuf_open(unsigned long align, struct vpu_dmabuf_dev **dev, char *title);
 int vpu_dmabuf_close(struct vpu_dmabuf_dev *dev);
