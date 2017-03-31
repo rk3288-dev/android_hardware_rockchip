@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <linux/fb.h>
-
+#include <stdlib.h>
 #include <cutils/log.h>
 #include <cutils/atomic.h>
 #include <hardware/hardware.h>
@@ -35,9 +35,11 @@
 #include "gralloc_priv.h"
 #include "gralloc_helper.h"
 #include "gralloc_vsync.h"
+#include <cutils/properties.h>
+
 
 // numbers of buffers for page flipping
-#define NUM_BUFFERS NUM_FB_BUFFERS
+#define NUM_BUFFERS NUM_FB_BUFFERS 
 #define RK_FBIOGET_IOMMU_STA        0x4632
 #define RK_FBIOSET_CLEAR_FB         0x4633
 enum
@@ -46,6 +48,22 @@ enum
 };
 
 
+static int hwc_get_int_property(const char* pcProperty,const char* default_value)
+{
+    char value[PROPERTY_VALUE_MAX];
+    int new_value = 0;
+
+    if(pcProperty == NULL || default_value == NULL)
+    {
+        ALOGE("hwc_get_int_property: invalid param");
+        return -1;
+    }
+
+    property_get(pcProperty, value, default_value);
+    new_value = atoi(value);
+
+    return new_value;
+}
 static int fb_set_swap_interval(struct framebuffer_device_t* dev, int interval)
 {
 	if (interval < dev->minSwapInterval)
@@ -84,7 +102,7 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
 
 	if (hnd->flags & private_handle_t::PRIV_FLAGS_FRAMEBUFFER)
 	{
-		m->base.lock(&m->base, buffer, private_module_t::PRIV_USAGE_LOCKED_FOR_POST,
+		m->base.lock(&m->base, buffer, private_module_t::PRIV_USAGE_LOCKED_FOR_POST, 
 				0, 0, m->info.xres, m->info.yres, NULL);
 
 		const size_t offset = (uintptr_t)hnd->base - (uintptr_t)m->framebuffer->base;
@@ -93,26 +111,26 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
 		m->info.yoffset = offset / m->finfo.line_length;
 
 #ifdef STANDARD_LINUX_SCREEN
-		if (ioctl(m->framebuffer->fd, FBIOPAN_DISPLAY, &m->info) == -1)
+		if (ioctl(m->framebuffer->fd, FBIOPAN_DISPLAY, &m->info) == -1) 
 		{
 			AERR( "FBIOPAN_DISPLAY failed for fd: %d", m->framebuffer->fd );
-			m->base.unlock(&m->base, buffer);
+			m->base.unlock(&m->base, buffer); 
 			return -errno;
 		}
 #else /*Standard Android way*/
         #if 0
-		if (ioctl(m->framebuffer->fd, FBIOPUT_VSCREENINFO, &m->info) == -1)
+		if (ioctl(m->framebuffer->fd, FBIOPUT_VSCREENINFO, &m->info) == -1) 
 		{
 			AERR( "FBIOPUT_VSCREENINFO failed for fd: %d", m->framebuffer->fd );
-			m->base.unlock(&m->base, buffer);
+			m->base.unlock(&m->base, buffer); 
 			return -errno;
 		}
 		#endif
 		int sync = 0;
         struct rk_fb_win_cfg_data fb_info;
         memset(&fb_info,0,sizeof(fb_info));
-
-        unsigned int fboffset = hnd->offset;
+		
+        unsigned int fboffset = hnd->offset;        
         fb_info.win_par[0].area_par[0].data_format = hnd->format;
         fb_info.win_par[0].win_id = 0;
         fb_info.win_par[0].z_order = 0;
@@ -128,12 +146,12 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
         fb_info.win_par[0].area_par[0].yact = hnd->height;
         fb_info.win_par[0].area_par[0].xvir = hnd->width;
         fb_info.win_par[0].area_par[0].yvir = hnd->height;
-        if (ioctl(m->framebuffer->fd, RK_FBIOSET_CONFIG_DONE, &fb_info) == -1)
+        if (ioctl(m->framebuffer->fd, RK_FBIOSET_CONFIG_DONE, &fb_info) == -1) 
 		{
 			AERR( "FBIOPUT_VSCREENINFO failed for fd: %d", m->framebuffer->fd );
-			m->base.unlock(&m->base, buffer);
+			m->base.unlock(&m->base, buffer); 
 			return -errno;
-		}
+		} 
 		else
 		{
             for(int k=0;k<RK_MAX_BUF_NUM;k++)
@@ -142,26 +160,26 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
                     close(fb_info.rel_fence_fd[k]);
             }
             if(fb_info.ret_fence_fd != -1)
-                close(fb_info.ret_fence_fd);
+                close(fb_info.ret_fence_fd);		
 		}
 #endif
 		if ( 0 != gralloc_wait_for_vsync(dev) )
 		{
 			AERR( "Gralloc wait for vsync failed for fd: %d", m->framebuffer->fd );
-			m->base.unlock(&m->base, buffer);
+			m->base.unlock(&m->base, buffer); 
 			return -errno;
 		}
 		m->currentBuffer = buffer;
-	}
+	} 
 	else
 	{
 		void* fb_vaddr;
 		void* buffer_vaddr;
 
-		m->base.lock(&m->base, m->framebuffer, GRALLOC_USAGE_SW_WRITE_RARELY,
+		m->base.lock(&m->base, m->framebuffer, GRALLOC_USAGE_SW_WRITE_RARELY, 
 				0, 0, m->info.xres, m->info.yres, &fb_vaddr);
 
-		m->base.lock(&m->base, buffer, GRALLOC_USAGE_SW_READ_RARELY,
+		m->base.lock(&m->base, buffer, GRALLOC_USAGE_SW_READ_RARELY, 
 				0, 0, m->info.xres, m->info.yres, &buffer_vaddr);
 
 		// If buffer's alignment match framebuffer alignment we can do a direct copy.
@@ -186,8 +204,8 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
 				buffer_offset += hnd->byte_stride;
 			}
 		}
-		m->base.unlock(&m->base, buffer);
-		m->base.unlock(&m->base, m->framebuffer);
+		m->base.unlock(&m->base, buffer); 
+		m->base.unlock(&m->base, m->framebuffer); 
 	}
 
 	return 0;
@@ -199,7 +217,7 @@ int init_frame_buffer_locked(struct private_module_t* module)
 	{
 		return 0; // Nothing to do, already initialized
 	}
-
+        
 	char const * const device_template[] =
 	{
 		"/dev/graphics/fb%u",
@@ -275,7 +293,35 @@ int init_frame_buffer_locked(struct private_module_t* module)
 	info.nonstd &= 0xffffff00;
 	info.nonstd |= HAL_PIXEL_FORMAT_RGBX_8888;
 #endif
+	int xxx_w =  hwc_get_int_property("sys.xxx.x_w","0");
+	int xxx_h =  hwc_get_int_property("sys.xxx.x_h","0");
+	int xxx_s = hwc_get_int_property("sys.xxx.s", "0");
 
+	if(xxx_w && xxx_h)
+	{
+		info.xres = xxx_w;//3840;
+		info.yres = xxx_h;//2160;
+		info.xres_virtual =  info.xres;
+		info.yres_virtual = info.yres * 3;
+		//finfo.line_length = info.xres * 4;
+	}
+	else if (xxx_s)
+	{
+		char value[20];
+		info.xres = (info.xres * 100 / xxx_s + 31) & (~31);
+		info.yres = (info.yres * 100 / xxx_s + 31) & (~31);
+		info.xres_virtual =  info.xres;
+		info.yres_virtual = info.yres * 3;
+		sprintf(value, "%d", info.xres);
+		//ALOGD("info.xres = %s", value);
+		property_set("sys.xxx.x_w", value);
+		sprintf(value, "%d", info.yres);
+		//ALOGD("info.yres = %s", value);
+		property_set("sys.xxx.x_h", value);
+		//finfo.line_length = info.xres * 4;
+	}
+    
+	/*
 	/*
 	 * Request NUM_BUFFERS screens (at lest 2 for page flipping)
 	 */
@@ -308,9 +354,9 @@ int init_frame_buffer_locked(struct private_module_t* module)
 	if ( info.pixclock > 0 )
 	{
 		refreshRate =
-            1000000000000000LLU
+            1000000000000000LLU 
             / ( uint64_t( info.vsync_len + info.upper_margin + info.lower_margin + info.yres )  // 纵向 pixel_num.
-                * ( info.hsync_len + info.left_margin  + info.right_margin + info.xres )        // 横向.
+                * ( info.hsync_len + info.left_margin  + info.right_margin + info.xres )        // 横向. 
                 * info.pixclock );                                                              // pixel_clock.
 	}
 	else
@@ -334,7 +380,9 @@ int init_frame_buffer_locked(struct private_module_t* module)
 	float xdpi = (info.xres * 25.4f) / info.width;
 	float ydpi = (info.yres * 25.4f) / info.height;
 	float fps  = refreshRate / 1000.0f;
-
+	ALOGD("ori dpi[%f,%f]",xdpi,ydpi);
+	//xdpi =  xdpi *1.2;
+	//ydpi = ydpi *1.2;
 	AINF("using (fd=%d)\n"
 	     "id           = %s\n"
 	     "xres         = %d px\n"
@@ -394,7 +442,7 @@ int init_frame_buffer_locked(struct private_module_t* module)
 	 */
 	size_t fbSize = round_up_to_page_size(finfo.line_length * info.yres_virtual);
 	void* vaddr = mmap(0, fbSize, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-	if (vaddr == MAP_FAILED)
+	if (vaddr == MAP_FAILED) 
 	{
 		AERR( "Error mapping the framebuffer (%s)", strerror(errno) );
 		return -errno;
@@ -415,7 +463,7 @@ int init_frame_buffer_locked(struct private_module_t* module)
 
 	module->numBuffers = info.yres_virtual / info.yres;
 	module->bufferMask = 0;
-
+	
 #if GRALLOC_ARM_UMP_MODULE
 	ioctl(fd, IOCTL_GET_FB_UMP_SECURE_ID, &module->framebuffer->ump_id);
 	if ( (int)UMP_INVALID_SECURE_ID != module->framebuffer->ump_id )
@@ -443,7 +491,7 @@ static int fb_close(struct hw_device_t *device)
 #if GRALLOC_ARM_UMP_MODULE
 		ump_close();
 #endif
-		delete dev;
+		free(dev);
 	}
 	return 0;
 }
@@ -458,11 +506,11 @@ int compositionComplete(struct framebuffer_device_t* dev)
 	   synchronously in the same thread, and not asynchronoulsy in a background thread later.
 	   The SurfaceFlinger requires this behaviour since it releases the lock on all the
 	   SourceBuffers (Layers) after the compositionComplete() function returns.
-	   However this "bad" behaviour by SurfaceFlinger should not affect performance,
-	   since the Applications that render the SourceBuffers (Layers) still get the
+	   However this "bad" behaviour by SurfaceFlinger should not affect performance, 
+	   since the Applications that render the SourceBuffers (Layers) still get the 
 	   full renderpipeline using asynchronous rendering. So they perform at maximum speed,
 	   and because of their complexity compared to the Surface flinger jobs, the Surface flinger
-	   is normally faster even if it does everyhing synchronous and serial.
+	   is normally faster even if it does everyhing synchronous and serial. 
 	   */
 	return 0;
 }
@@ -489,14 +537,31 @@ int framebuffer_device_open(hw_module_t const* module, const char* name, hw_devi
 
 	private_module_t* m = (private_module_t*)module;
 	status = init_frame_buffer(m);
-	if (status < 0)
+
+	/* malloc is used instead of 'new' to instantiate the struct framebuffer_device_t
+	 * C++11 spec specifies that if a class/struct has a const member,default constructor 
+	 * is deleted. So, if 'new' is used to instantiate the class/struct, it will throw
+	 * error complaining about deleted constructor. Even if the struct is wrapped in a class
+	 * it will still try to use the base class constructor to initialize the members, resulting 
+	 * in error 'deleted constructor'.
+	 * This leaves two options 
+	 * Option 1: initialize the const members at the instantiation time. With {value1, value2 ..}
+	 * Which relies on the order of the members, and if members are reordered or a new member is introduced
+	 * it will end up assiging wrong value to members. Designated assignment as well has been removed in C++11
+	 * Option 2: use malloc instead of 'new' to allocate the class/struct and initialize the members in code. 
+	 * This is the only maintainable option available.
+	 */
+
+	framebuffer_device_t *dev =  reinterpret_cast<framebuffer_device_t*> (malloc(sizeof(framebuffer_device_t)));
+
+	/* if either or both of init_frame_buffer() and malloc failed */
+	if ((status < 0) || (!dev))
 	{
 		gralloc_close(gralloc_device);
+		(!dev)?	(void)(status = -ENOMEM) : free(dev);
 		return status;
 	}
 
-	/* initialize our state here */
-	framebuffer_device_t *dev = (framebuffer_device_t*)malloc(sizeof(*dev));
 	memset(dev, 0, sizeof(*dev));
 
 	/* initialize the procs */

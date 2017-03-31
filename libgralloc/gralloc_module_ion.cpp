@@ -32,6 +32,8 @@
 #include <ion/ion.h>
 #include <sys/mman.h>
 
+#include <vector>
+
 int gralloc_backend_register(private_handle_t* hnd)
 {
 	int retval = -EINVAL;
@@ -125,8 +127,11 @@ void gralloc_backend_sync(private_handle_t* hnd)
 		private_module_t *m=NULL;
 		if (hw_get_module(GRALLOC_HARDWARE_MODULE_ID, (const hw_module_t **)&pmodule) == 0)
 		{
-			m = reinterpret_cast<private_module_t *>(pmodule);
-			ion_sync_fd(m->ion_client, hnd->share_fd);
+			if(!(hnd->flags & private_handle_t::PRIV_FLAGS_USES_ION_DMA_HEAP))
+			{
+				m = reinterpret_cast<private_module_t *>(pmodule);
+				ion_sync_fd(m->ion_client, hnd->share_fd);
+			}
 		}
 		else
 		{
@@ -134,4 +139,23 @@ void gralloc_backend_sync(private_handle_t* hnd)
 		}
 		break;
 	}
+}
+
+int gralloc_backend_get_fd(private_handle_t* hnd, int *fd)
+{
+	*fd = hnd->share_fd;
+	return 0;
+}
+
+int gralloc_backend_get_attrs(private_handle_t* hnd, void *attrs)
+{
+	std::vector<int> *attributes = (std::vector<int> *)attrs;
+	attributes->clear();
+	attributes->push_back(hnd->width);
+	attributes->push_back(hnd->height);
+	attributes->push_back(hnd->stride);
+	attributes->push_back(hnd->format);
+	attributes->push_back(hnd->size);
+	attributes->push_back(hnd->type);
+	return 0;
 }

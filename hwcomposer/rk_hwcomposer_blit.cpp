@@ -67,7 +67,7 @@ _HasAlpha(RgaSURF_FORMAT Format)
            );
 }
 */
-#if VIRTUAL_RGA_BLIT
+#if RGA_BLIT
 static int _DumpFbInfo(struct fb_var_screeninfo *info, int win)
 {
     LOGD("dump win%d: vir[%d,%d] [%d,%d,%d,%d] => [%d,%d,%d,%d]", win,
@@ -83,7 +83,7 @@ static int _DumpFbInfo(struct fb_var_screeninfo *info, int win)
 
     return 0;
 }
-hwcSTATUS
+static hwcSTATUS
 _ComputeUVOffset(
     IN  RgaSURF_FORMAT Format,
     IN  unsigned int Logical ,
@@ -141,25 +141,25 @@ _ComputeUVOffset(
 int hwcppCheck(struct rga_req * rga_p,cmpType mode,int isyuv,int rot,hwcRECT *src,hwcRECT *dst)
 {
     float hfactor = 1.0;
-    float vfactor = 1.0; 
+    float vfactor = 1.0;
 
     if( !(mode == HWC_RGA_TRSM_GPU_VOP || mode == HWC_RGA_TRSM_VOP)
-        ||  !isyuv 
+        ||  !isyuv
         || !rot)
     {
         if(is_out_log())
             ALOGD("exit line=%d,[%d,%d,%d]",__LINE__,mode,isyuv ,rot);
         return -1;
     }
-    if(src->left%8 /*|| dst->left%8*/) 
+    if(src->left%8 /*|| dst->left%8*/)
     {
         if(is_out_log())
             ALOGD("exit line=%d,[%d,%d]",__LINE__,src->left, dst->left);
         return -1;
-    }         
-    if((src->right- src->left)%8 
+    }
+    if((src->right- src->left)%8
         || (dst->right - dst->left)%8
-        || (src->bottom - src->top)%8) 
+        || (src->bottom - src->top)%8)
     {
         if(is_out_log())
             ALOGD("src w,h,dst w exit line=%d,[%d,%d,%d]",
@@ -191,7 +191,7 @@ int hwcDobypp(struct rga_req * rga_p,int x,int y,int tra)
     static int vpuFd = -1;
     unsigned int src = rga_p->line_draw_info.color & 0xffff;
     unsigned int dst = (rga_p->line_draw_info.color & 0xffff0000)>> 16;
-    
+
 #ifndef TARGET_SECVM
 	android::PP_OP_HANDLE hnd;
 	android::PP_OPERATION opt;
@@ -216,28 +216,28 @@ int hwcDobypp(struct rga_req * rga_p,int x,int y,int tra)
 
     opt.dstAddr     = dst;
     opt.dstFormat   = PP_OUT_FORMAT_YUV420INTERLAVE;
-    
+
     opt.dstHStride   = rga_p->dst.vir_w;
     opt.dstVStride   = rga_p->dst.vir_h;
-    
+
     opt.dstWidth    = rkmALIGN(rga_p->dst.act_h,8);
     opt.dstHeight   = rkmALIGN(rga_p->dst.act_w,2);
     opt.dstX        = rkmALIGN(x,8);
     opt.dstY        = y;
 
     opt.deinterlace = 0;
-    
+
    // if(wid_alig16 != SRC_WIDTH)
        // opt.srcCrop8R = 1;
   //  if(hei_alig16 != SRC_HEIGHT)
     //opt.srcCrop8D= 1;
-        
-       
+
+
     switch (tra)
     {
         case 0:
             break;
-      
+
         case HWC_TRANSFORM_ROT_90:
             opt.rotation    = PP_ROTATION_RIGHT_90;
             break;
@@ -245,10 +245,10 @@ int hwcDobypp(struct rga_req * rga_p,int x,int y,int tra)
         case HWC_TRANSFORM_ROT_180:
             //opt.dstHStride   = rga_p->dst.vir_h ;
            // opt.dstVStride   = rga_p->dst.vir_w;
-            
+
             opt.dstWidth    = rkmALIGN(rga_p->dst.act_w,8);
             opt.dstHeight   = rkmALIGN(rga_p->dst.act_h,2);
-        
+
             opt.rotation    = PP_ROTATION_180;
             break;
 
@@ -271,7 +271,7 @@ int hwcDobypp(struct rga_req * rga_p,int x,int y,int tra)
 	    ALOGD("src[addr=%x,%d,%d,%d,%d][%d,%d]=>dst[addr=%x,%d,%d,%d,%d][%d,%d],rot=%d,%d",
         opt.srcAddr,opt.srcX,opt.srcY,opt.srcWidth,opt.srcHeight,opt.srcHStride,opt.srcVStride,
         opt.dstAddr,opt.dstX,opt.dstY,opt.dstWidth,opt.dstHeight,opt.dstHStride,opt.dstVStride,tra,HWC_TRANSFORM_ROT_180);
-    
+
     opt.vpuFd       = vpuFd;
 
 #ifndef TARGET_SECVM
@@ -281,7 +281,7 @@ int hwcDobypp(struct rga_req * rga_p,int x,int y,int tra)
 		hnd = NULL;
 		goto vpuerr;
 	}
-#else 
+#else
     ret = ppOpInit(&hnd, &opt);
     if (ret < 0) {
         ALOGE("ppOpInit failed.");
@@ -312,19 +312,19 @@ int hwcDobypp(struct rga_req * rga_p,int x,int y,int tra)
     if (ret) {
         ALOGE("ppOpSync failed");
         goto vpuerr;
-        
+
     }
 #ifndef TARGET_SECVM
 	ret = android::ppOpRelease(hnd);
 #else
     ret = ppOpRelease(hnd);
 #endif
-    if (ret) {    
+    if (ret) {
         ALOGE("ppOpPerform failed");
         goto vpuerr;
-        
+
     }
-    
+
     return 0;
 vpuerr:
 
@@ -395,7 +395,7 @@ hwcBlit(
     unsigned char   scale_mode = 2;
     unsigned char   dither_en = 0;
     int retv  = 0;
-    
+
     struct private_handle_t* handle = srchnd;
     dither_en = android::bytesPerPixel(GPU_FORMAT) == android::bytesPerPixel(GPU_DST_FORMAT) ? 0 : 1;
     LOGV(" hwcBlit start--->");
@@ -445,10 +445,10 @@ hwcBlit(
     {
         //ALOGD("force dst yuv");
         //dstFormat = RK_FORMAT_YCbCr_420_SP;
-    }*/    
+    }*/
 
 
-   // ALOGD("fmt = %d",dstFormat);        
+   // ALOGD("fmt = %d",dstFormat);
     /* <<< End surface information. */
 
     /* Setup transform */
@@ -459,7 +459,7 @@ hwcBlit(
         srcRect.top     = SrcRect->top;
         srcRect.right   = SrcRect->right;
         srcRect.bottom  = SrcRect->bottom;
-        
+
         dstRect.left   = DstRect->left;
         dstRect.top    = DstRect->top;
         dstRect.right  = DstRect->right;
@@ -498,7 +498,7 @@ hwcBlit(
     {
         RGA_set_src_vir_info(&Rga_Request, srchnd->share_fd, 0,  0, srcStride, srcHeight, srcFormat, 0);
         RGA_set_dst_vir_info(&Rga_Request, dstFd, 0,  0, DstHandle->stride, dstHeight, &clip, dstFormat, 0);
-        //rga_set_fds_offsets(&Rga_Request, srchnd->share_fd, dstFd, 0, 0);        
+        //rga_set_fds_offsets(&Rga_Request, srchnd->share_fd, dstFd, 0, 0);
     }
     LOGD("RGA src:fd=%d,base=%p,src_vir_w = %d, src_vir_h = %d,srcLogical=%x,srcFormat=%d", srchnd->share_fd, srchnd->base, \
          srcStride, srcHeight, srcLogical, srcFormat);
@@ -595,20 +595,20 @@ hwcBlit(
                  * A = As */
                 break;
         }
-    }    
+    }
     /* Check yuv format. */
     yuvFormat = (srcFormat >= RK_FORMAT_YCbCr_422_SP && srcFormat <= RK_FORMAT_YCbCr_420_P);
 
     /* Check stretching. */
 
-    if(yuvFormat)  
+    if(yuvFormat)
     {
         dstRect.left -= dstRect.left%2;
-        dstRect.top -= dstRect.top%2;            
+        dstRect.top -= dstRect.top%2;
         dstRect.right -= dstRect.right%2;
         dstRect.bottom -= dstRect.bottom%2;
     }
-    
+
     if ((Src->transform == HWC_TRANSFORM_ROT_90) || (Src->transform == HWC_TRANSFORM_ROT_270))
     {
         hfactor = (float)(srcRect.bottom - srcRect.top)
@@ -675,10 +675,10 @@ hwcBlit(
             /* Intersect clip with dest. */
             if(Src->dospecialflag)
             {
-                dstRects[m].left   = dstRect.left;   
+                dstRects[m].left   = dstRect.left;
                 dstRects[m].top    = dstRect.top;
                 dstRects[m].right  = dstRect.right;
-                dstRects[m].bottom = dstRect.bottom;    
+                dstRects[m].bottom = dstRect.bottom;
                 ALOGD("@spicial [%d,%d,%d,%d]",dstRects[m].left,dstRects[m].top,dstRects[m].right,dstRects[m].bottom);
             }
             else
@@ -688,7 +688,7 @@ hwcBlit(
                 dstRects[m].right  = hwcMIN(dstRect.right,  rects[n].right);
                 dstRects[m].right  = hwcMIN(dstRects[m].right,(signed int)(dstWidth));
                 dstRects[m].bottom = hwcMIN(dstRect.bottom, rects[n].bottom);
-            }    
+            }
             if (dstRects[m].top < 0) // @ buyudaren grame dstRects[m].top < 0,bottom is height ,so do this
             {
                 dstRects[m].top = dstRects[m].top + dstHeight;
@@ -711,15 +711,15 @@ hwcBlit(
 
                 continue;
             }
-            if(yuvFormat)  
+            if(yuvFormat)
             {
                 dstRects[m].left -= dstRects[m].left%2;
-                dstRects[m].top -= dstRects[m].top%2;            
+                dstRects[m].top -= dstRects[m].top%2;
                 dstRects[m].right -= dstRects[m].right%2;
                 dstRects[m].bottom -= dstRects[m].bottom%2;
 
             }
-            
+
             LOGI("%s(%d): Region rect[%d]:  [%d,%d,%d,%d]",
                  __FUNCTION__,
                  __LINE__,
@@ -734,7 +734,7 @@ hwcBlit(
             if(Src->dospecialflag)
             {
                  n = (unsigned int) Region->numRects;
-            }     
+            }
         }
 
         /* Try next group if no rects. */
@@ -743,7 +743,7 @@ hwcBlit(
             hwcONERROR(hwcSTATUS_INVALID_ARGUMENT);
         }
 
-        
+
         for (unsigned int i = 0; i < m; i++)
         {
             switch (Src->transform)
@@ -859,7 +859,7 @@ hwcBlit(
                     break;
 
                 case HWC_TRANSFORM_ROT_270:
-                
+
                     RotateMode      = 1;
                     Rotation        = 270;
                     Xoffset = dstRects[i].left;
@@ -890,7 +890,7 @@ hwcBlit(
             }
 
             srcRects[i].left = hwcMAX(srcRects[i].left,0);
-            srcRects[i].top = hwcMAX(srcRects[i].top,0); 
+            srcRects[i].top = hwcMAX(srcRects[i].top,0);
             if (yuvFormat)
             {
                 srcRects[i].left -=   srcRects[i].left % 2;
@@ -938,7 +938,7 @@ hwcBlit(
             {
                 RGA_set_mmu_info(&Rga_Request, 1, 0, 0, 0, 0, 2);
                 Rga_Request.mmu_info.mmu_flag |= (1 << 31) | (DstHandle->type << 10) | (srchnd->type << 8);
-				ALOGV("rga_flag=%x",Rga_Request.mmu_info.mmu_flag); 
+				ALOGV("rga_flag=%x",Rga_Request.mmu_info.mmu_flag);
             }
 /*
             if(FceMrga->use_fence)
@@ -977,7 +977,7 @@ hwcBlit(
                          dstRects[i].right,
                          dstRects[i].bottom
                         );
-                
+
                 }
                 return hwcSTATUS_OK;
             }
@@ -992,7 +992,7 @@ hwcBlit(
                      srcStride, srcHeight, srcLogical, srcFormat);
                 LOGE("RGA dst:fd=%d,offset=%d,base=%p,dst_vir_w = %d, dst_vir_h = %d,dstLogical=%x,dstPhysical=%x,dstFormat=%d", dstFd, DstHandle->offset, DstHandle->base, \
                      dstWidth, dstHeight, dstLogical, dstPhysical, dstFormat);
-                
+
                 LOGE("%s(%d): Adjust ActSrcRect[%d]=[%d,%d,%d,%d] => ActDstRect=[%d,%d,%d,%d]",
                      __FUNCTION__,
                      __LINE__,
@@ -1031,10 +1031,10 @@ hwcBlit(
                     {
                         ALOGE("RGA err force close[%d]",FceMrga->rel_fd);
                         close( FceMrga->rel_fd);
-                    }    
-                    FceMrga->rel_fd = -1;			
+                    }
+                    FceMrga->rel_fd = -1;
                 }
-*/ 
+*/
             }
 /*
             if(FceMrga->use_fence)
@@ -1042,7 +1042,7 @@ hwcBlit(
                 FceMrga->rel_fd = RGA_get_dst_fence(&Rga_Request);
                 Context->engine_err_cnt = Rga_Request.line_draw_info.start_point.x; // RGA  err count,
             }
-*/ 
+*/
         }
     }
     while (n < (unsigned int) Region->numRects);
@@ -1137,7 +1137,7 @@ hwcDim(
 #endif
 */
     dstFd = (unsigned int)(DstHandle->share_fd);
-    
+
  	//ALOGD("mem_type=%d", srchnd->type);
     /*if (srchnd->type == 1)
     {
@@ -1247,7 +1247,7 @@ hwcDim(
             {
                 RGA_set_mmu_info(&Rga_Request, 1, 0, 0, 0, 0, 2);
                 Rga_Request.mmu_info.mmu_flag |= (1 << 31) | (DstHandle->type << 10) | (srchnd->type << 8);
-				ALOGV("rga_flag=%x",Rga_Request.mmu_info.mmu_flag); 
+				ALOGV("rga_flag=%x",Rga_Request.mmu_info.mmu_flag);
             }
             if (ioctl(Context->engine_fd, RGA_BLIT_ASYNC, &Rga_Request) != 0)
             {
@@ -1347,7 +1347,7 @@ hwcClear(
 #endif
 */
     dstFd = (unsigned int)(DstHandle->share_fd);
-    
+
  	//ALOGD("mem_type=%d", srchnd->type);
     /*if (srchnd->type == 1)
     {
@@ -1440,7 +1440,7 @@ hwcClear(
             {
                 RGA_set_mmu_info(&Rga_Request, 1, 0, 0, 0, 0, 2);
                 Rga_Request.mmu_info.mmu_flag |= (1 << 31) | (DstHandle->type << 10) | (srchnd->type << 8);
-				ALOGV("rga_flag=%x",Rga_Request.mmu_info.mmu_flag); 
+				ALOGV("rga_flag=%x",Rga_Request.mmu_info.mmu_flag);
             }
 
             RGA_set_dst_act_info(&Rga_Request, WidthAct, HeightAct, Xoffset, Yoffset);

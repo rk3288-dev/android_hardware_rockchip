@@ -49,14 +49,17 @@
 #define MOST_WIN_ZONES                  4
 #define ENBALE_WIN_ANY_ZONES            0
 #define ENABLE_TRANSFORM_BY_RGA         1           //1: It will need reserve a phyical memory for transform.
-#define OPTIMIZATION_FOR_TRANSFORM_UI   1
+#define OPTIMIZATION_FOR_TRANSFORM_UI   0
 #define OPTIMIZATION_FOR_DIMLAYER       1           //1: optimise for dim layer
 #define HWC_EXTERNAL                    1           //1:hwc control two lcdc for display
 #define USE_QUEUE_DDRFREQ               1
 #define SUPPORTFORCE3D                  1           //1:can be force 3D,but android 4.4
 #define USE_WM_SIZE                     0           //1:use wm command,now bootanimation source error sometimes
 #define VIDEO_UI_OPTIMATION             1           //1:support,so we can reduce the bandwidth
-#define HTGFORCEREFRESH                 0           //1:some customer not use rk's setting apk,hwc need refesh
+#define HTGFORCEREFRESH                 1           //1:some customer not use rk's setting apk,hwc need refesh
+#define HWC_DELAY_TIME_TEST             0
+
+#define RGA_BLIT                        1           //1:support blit by rga
 
 #ifdef GPU_G6110
 #define G6110_SUPPORT_FBDC              0
@@ -88,6 +91,7 @@
 #define MaxZones                        10
 #define bakupbufsize                    4
 #define MaxVideoBackBuffers             (3)
+#define MaxBlitNum                      (5)
 #define MAX_VIDEO_SOURCE                (5)
 #define GPUDRAWCNT                      (20)
 #define MaxSpriteBNUM                   (3)
@@ -95,6 +99,7 @@
 #define RWIDTH                          (4096)
 #define RHEIGHT                         (2304)
 #define RLAGESIZE                       (14155776)      //RLAGESIZE = RWIDTH * RHEIGHT * 1.5
+#define BOOTCOUNT                       (5)
 
 //Other macro
 #define GPU_WIDTH                       handle->width
@@ -112,19 +117,22 @@
 #define VIDEO_PLAY_ACTIVITY_LAYER_NAME  "android.rk.RockVideoPlayer/android.rk.RockVideoPlayer.VideoP"
 #define RK_QUEDDR_FREQ                  0x8000
 #define HAL_PIXEL_FORMAT_YCrCb_NV12_OLD 0x20
+#define HAL_PIXEL_FORMAT_YCrCb_NV12_10_OLD 0x22
 #define ATRACE_TAG                      ATRACE_TAG_GRAPHICS
 
 #define HWCP                            0           //HWC_DISPLAY_PRIMARY
 #define HWCE                            1           //HWC_DISPLAY_EXTERNAL
 #define HWCV                            2           //HWC_DISPLAY_VIRTUAL
 
-#define GHWC_VERSION                    "2.067"
-#define HWC_VERSION                     "HWC_VERSION Author:wzq Version:2.067"
+#define GHWC_VERSION                    "2.10"
+#define HWC_VERSION                     "HWC_VERSION Author:wzq Version:2.10"
 
 #ifdef GPU_G6110
 #if G6110_SUPPORT_FBDC
 #define FBDC_BGRA_8888                  0x125 //HALPixelFormatSetCompression(HAL_PIXEL_FORMAT_BGRA_8888,HAL_FB_COMPRESSION_DIRECT_16x4)
 #define FBDC_RGBA_8888                  0x121 //HALPixelFormatSetCompression(HAL_PIXEL_FORMAT_RGBA_8888,HAL_FB_COMPRESSION_DIRECT_16x4)
+
+#define GRALLOC_MODULE_SET_BUFFER_FORMAT_HINT_IMG 110
 
 //lcdc support fbdc format
 enum data_format {
@@ -133,6 +141,8 @@ FBDC_ARGB_888,
 FBDC_RGBX_888,
 FBDC_ABGR_888
 };
+
+#define IS_ALIGN(val,align)    (((val)&(align-1))==0)
 
 //G6110 support fbdc compression methods
 #define HAL_FB_COMPRESSION_NONE                0
@@ -218,6 +228,16 @@ enum
 
 enum
 {
+    //F:full win,L:litel win,N: no win,H:hwc win
+    VOPFFLLH = 1 << 0,     //3288 two vop,3368 one vop are all like this
+    VOPFLHNN = 1 << 1,     //sofia 312x 3188 are all like this
+    VOPFFNNH = 1 << 2,     //
+    VOPFFHNN = 1 << 3,     //322x is that
+    VOPFLNNH = 1 << 4,     //
+};
+
+enum
+{
     //Log level flag
     HLLONE = 1 << 0,     //HWC_LOG_LEVEL_ONE
     HLLTWO = 1 << 1,     //HWC_LOG_LEVEL_TWO
@@ -259,7 +279,7 @@ typedef struct _hwcRECT
 }
 hwcRECT;
 
-#if VIRTUAL_RGA_BLIT
+#if RGA_BLIT
 typedef struct _FenceMangrRga
 {
     bool is_last;
@@ -300,14 +320,19 @@ typedef struct _ZoneInfo
 	int         zone_alpha;
 	int         blend;
 	bool        is_stretch;
+	bool        is_yuv;
 	int         is_large;
 	int         size;
 	bool        scale_err;
 	bool        zone_err;
+	bool        source_err;
 	bool        toosmall;
 	float       vfactor;
 	float       hfactor;
 	int         format;
+#ifdef USE_AFBC_LAYER
+	uint64_t    internal_format;
+#endif
 	int         zone_index;
 	int         layer_index;
 	int         transform;
@@ -319,6 +344,7 @@ typedef struct _ZoneInfo
 	int         displayStereo;
 	int         glesPixels;
 	int         overlayPixels;
+	int         skipLayer;
     unsigned int zoneCrc;
 	char        LayerName[LayerNameLength + 1];   
 #ifdef USE_HWC_FENCE
@@ -330,6 +356,7 @@ ZoneInfo;
 
 typedef struct _RgaTrfBakInfo
 {
+    int type;
     int w_valid;
     int h_valid;
     int layer_fd;
@@ -337,6 +364,7 @@ typedef struct _RgaTrfBakInfo
     int lastfd;
     uint32_t transform;
     bool trsfrmbyrga;
+    ZoneInfo zone_info;
     struct private_handle_t* hdl;
 }
 RgaTBI;
@@ -516,6 +544,7 @@ typedef enum _cmpType
     HWC_MIX_UP,
     HWC_MIX_FPS,
     HWC_MIX_VH,
+    HWC_RGA_VOP_GPU,
     HWC_POLICY_NUM
 }cmpType;
 
@@ -550,6 +579,8 @@ typedef struct _hwcContext
     /*********** Reference count. Normally:  1. ************/
     unsigned int                    reference;
 
+    /****************** context index num ******************/
+    int                             mContextIndex;
 
     /******************* Raster engine *********************/
     int                             engine_fd;
@@ -584,6 +615,7 @@ typedef struct _hwcContext
     unsigned int                    fbStride;
     int                             wfdOptimize;
     bool                            wfdRgaBlit;
+
     /***************** PMEM stuff. *************************/
     unsigned int                    pmemPhysical;
     unsigned int                    pmemLength;
@@ -601,6 +633,7 @@ typedef struct _hwcContext
     int                            flag;
     int                            fb_blanked;
     int                            mAlphaError;
+    int                            mBootCnt;
 
     /***************** video flag **************************/
     bool                           mVideoMode;
@@ -609,10 +642,12 @@ typedef struct _hwcContext
     bool                           mVideoRotate;
     bool                           mGtsStatus;
     bool                           mTrsfrmbyrga;
+    bool                           mIsLargeVideo;
     int                            mtrsformcnt;
 
     /*****************dual display ***********************/
     int                            mLcdcNum;
+    bool                           mIsMipiDualOutMode;
     bool                           mIsFirstCallbackToHotplug;
     bool                           mIsBootanimExit;
     bool                           mResolutionChanged;
@@ -620,8 +655,12 @@ typedef struct _hwcContext
     hdmiStateInfo                  mHdmiSI;
 
     /*****************policy *****************************/
+    bool                           mComVop;
     bool                           mMultiwindow;
+    bool                           mHasYuvTenBit;
     int                            mLastCompType;
+    int                            mOneWinOpt;
+    unsigned int                   mSecureLayer;
 
     int (*fun_policy[HWC_POLICY_NUM])(void * ,hwc_display_contents_1_t*);
 
@@ -638,10 +677,17 @@ typedef struct _hwcContext
     bufferInfo                     mSrBI;
 #endif
 
+    /*****************force refresh**********************/
 #if HTGFORCEREFRESH
     threadPamaters                 mRefresh;
 #endif
     threadPamaters                 mControlStereo;
+    threadPamaters                 mRgaBlitAlloc;
+
+#if G6110_SUPPORT_FBDC
+    /*****************fbdc*****************************/
+    bool                           bFbdc;       //if contain fbdc layer,set it to true.
+#endif
 
     /************The index of video buffer will be used */
     int                            mCurVideoIndex;
@@ -654,6 +700,13 @@ typedef struct _hwcContext
 #endif
     buffer_handle_t                pbvideo_bk[MaxVideoBackBuffers];
 
+    /************The index of video buffer will be used */
+    int                            mCurRgaBlitIndex;
+    int                            mCurRgaBlitBufferSize;
+    int                            mRgaBlitRelFd[MaxVideoBackBuffers];
+    buffer_handle_t                mRgaBlitBuffers[MaxVideoBackBuffers];
+    hwc_rect_t *                   mRgaBlitRects[MaxBlitNum];
+
 #if OPTIMIZATION_FOR_DIMLAYER
     bool                           bHasDimLayer;
     int                            mDimFd;
@@ -664,6 +717,22 @@ typedef struct _hwcContext
 #endif
     buffer_handle_t                mDimHandle;
 #endif
+    int                            g_hdmi_mode;
+    /************vop info****************************/
+    void*                          vopctx;
+    unsigned int                   vopType;
+    int                            vopDispMode;
+
+    /************platform info***********************/
+    bool                           isVr;
+    bool                           isBox;
+    bool                           isMid;
+    bool                           isPhone;
+    bool                           isRk3288;
+    bool                           isRk3368;
+    bool                           isRk3366;
+    bool                           isRk3399;
+
 }
 hwcContext;
 #define rkmALIGN(n, align) \
@@ -727,7 +796,7 @@ hwcGetFormat(
     IN  struct private_handle_t * Handle,
     OUT RgaSURF_FORMAT * Format
     );
-#if VIRTUAL_RGA_BLIT
+#if RGA_BLIT
 hwcSTATUS
 hwcGetBufFormat(
     IN  struct private_handle_t * Handle,
@@ -746,18 +815,6 @@ hwcGetBufferInfo(
     OUT void * *  Info
 );
 
-
-hwcSTATUS
-hwcUnlockBuffer(
-    IN hwcContext * Context,
-    IN struct private_handle_t * Handle,
-    IN void * Logical,
-    IN void * Info,
-    IN unsigned int  Physical
-);
-#endif
-int hwChangeRgaFormat(IN int fmt );
-int hwcGetBufferSizeForRga(IN int w,IN int h,IN int fmt);
 
 #if defined(__arm64__) || defined(__aarch64__)
 
@@ -785,6 +842,12 @@ hwcUnlockBuffer(
     );
 
 #endif
+#endif
+int hwChangeRgaFormat(IN int fmt );
+int hwcGetBufferSizeForRga(IN int w,IN int h,IN int fmt);
+int init_thread_pamaters(threadPamaters* mThreadPamaters);
+int free_thread_pamaters(threadPamaters* mThreadPamaters);
+
 
 int
 _HasAlpha(RgaSURF_FORMAT Format);
@@ -814,7 +877,7 @@ extern "C" int clock_nanosleep(clockid_t clock_id, int flags,
 \******************************************************************************/
 
 /* 2D blit. */
-#if VIRTUAL_RGA_BLIT
+#if RGA_BLIT
 hwcSTATUS
 hwcBlit(
     IN hwcContext * Context,

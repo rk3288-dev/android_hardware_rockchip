@@ -24,7 +24,10 @@
 #include <hardware/hardware.h>
 #include <hardware/gralloc.h>
 
+#include <vector>
+
 #include "gralloc_priv.h"
+#include "gralloc_helper.h"
 #include "alloc_device.h"
 #include "framebuffer_device.h"
 
@@ -42,9 +45,8 @@
 
 #define RK_FBIOGET_IOMMU_STA        0x4632
 
-#define RK_GRALLOC_VERSION "1.0.2"
-#define ARM_RELEASE_VER "r6p0-02rel0"
-
+#define RK_GRALLOC_VERSION "1.0.3"
+#define ARM_RELEASE_VER "r12p0-04rel0"
 
 static pthread_mutex_t s_map_lock = PTHREAD_MUTEX_INITIALIZER;
 int g_MMU_stat = 0;
@@ -185,6 +187,13 @@ static int gralloc_lock(gralloc_module_t const* module, buffer_handle_t handle, 
 	}
 
 	private_handle_t* hnd = (private_handle_t*)handle;
+
+	if (hnd->req_format == HAL_PIXEL_FORMAT_YCbCr_420_888)
+	{
+		AERR("Buffers with format YCbCr_420_888 must be locked using (*lock_ycbcr)" );
+		return -EINVAL;
+	}
+
 	if (hnd->flags & private_handle_t::PRIV_FLAGS_USES_UMP || hnd->flags & private_handle_t::PRIV_FLAGS_USES_ION)
 	{
 		hnd->writeOwner = usage & GRALLOC_USAGE_SW_WRITE_MASK;
@@ -192,6 +201,94 @@ static int gralloc_lock(gralloc_module_t const* module, buffer_handle_t handle, 
 	if (usage & (GRALLOC_USAGE_SW_READ_MASK | GRALLOC_USAGE_SW_WRITE_MASK))
 	{
 		*vaddr = (void*)hnd->base;
+	}
+	return 0;
+}
+
+static int gralloc_lock_ycbcr(gralloc_module_t const* module, buffer_handle_t handle, int usage,
+                              int l, int t, int w, int h,
+                              android_ycbcr *ycbcr)
+{
+	if (private_handle_t::validate(handle) < 0)
+	{
+		AERR("Locking invalid buffer %p, returning error", handle );
+		return -EINVAL;
+	}
+
+	private_handle_t* hnd = (private_handle_t*)handle;
+
+	if (hnd->flags & private_handle_t::PRIV_FLAGS_USES_UMP || hnd->flags & private_handle_t::PRIV_FLAGS_USES_ION)
+	{
+		hnd->writeOwner = usage & GRALLOC_USAGE_SW_WRITE_MASK;
+	}
+	if (usage & (GRALLOC_USAGE_SW_READ_MASK | GRALLOC_USAGE_SW_WRITE_MASK))
+	{
+		char* base = (char*)hnd->base;
+		int y_stride = hnd->byte_stride;
+		/* Ensure height is aligned for subsampled chroma before calculating buffer parameters */
+		int adjusted_height = GRALLOC_ALIGN(hnd->height, 2);
+		int y_size =  y_stride * adjusted_height;
+
+		int u_offset = 0;
+		int v_offset = 0;
+		int c_stride = 0;
+		int step = 0;
+
+		/* Map format if necessary (also removes internal extension bits) */
+		uint64_t mapped_format = map_format(hnd->internal_format);
+
+		switch (mapped_format)
+		{
+			case GRALLOC_ARM_HAL_FORMAT_INDEXED_NV12:
+				c_stride = y_stride;
+				/* Y plane, UV plane */
+				u_offset = y_size;
+				v_offset = y_size + 1;
+				step = 2;
+				break;
+
+			case GRALLOC_ARM_HAL_FORMAT_INDEXED_NV21:
+				c_stride = y_stride;
+				/* Y plane, UV plane */
+				v_offset = y_size;
+				u_offset = y_size + 1;
+				step = 2;
+				break;
+
+			case HAL_PIXEL_FORMAT_YV12:
+			case GRALLOC_ARM_HAL_FORMAT_INDEXED_YV12:
+			{
+				int c_size;
+
+				/* Stride alignment set to 16 as the SW access flags were set */
+				c_stride = GRALLOC_ALIGN(hnd->byte_stride / 2, 16);
+				c_size = c_stride * (adjusted_height / 2);
+				/* Y plane, V plane, U plane */
+				v_offset = y_size;
+				u_offset = y_size + c_size;
+				step = 1;
+				break;
+			}
+
+            case HAL_PIXEL_FORMAT_YCrCb_NV12:
+				c_stride = y_stride;
+				/* Y plane, UV plane */
+				u_offset = y_size;
+				v_offset = y_size + 1;
+				step = 2;
+				break;
+
+			default:
+				AERR("Can't lock buffer %p: wrong format %llx", hnd, hnd->internal_format);
+				return -EINVAL;
+		}
+
+		ycbcr->y = base;
+		ycbcr->cb = base + u_offset;
+		ycbcr->cr = base + v_offset;
+		ycbcr->ystride = y_stride;
+		ycbcr->cstride = c_stride;
+		ycbcr->chroma_step = step;
 	}
 	return 0;
 }
@@ -216,100 +313,58 @@ static int gralloc_unlock(gralloc_module_t const* module, buffer_handle_t handle
 	return 0;
 }
 
-static int gralloc_lock_ycbcr(gralloc_module_t const* module,
-        buffer_handle_t handle, int usage,
-        int l, int t, int w, int h,
-        struct android_ycbcr *ycbcr)
+static int gralloc_perform(gralloc_module_t const* module, int op, ...)
 {
-    // this is called when a buffer is being locked for software
-    // access. in thin implementation we only fill ycbcr since
-    // not synchronization with the h/w is needed.
-    // typically this is used to wait for the h/w to finish with
-    // this buffer if relevant. the data cache may need to be
-    // flushed or invalidated depending on the usage bits and the
-    // hardware.
+	va_list args;
+	int err;
 
-    if (private_handle_t::validate(handle) < 0)
-    {
-        ALOGE("handle valid");
-        return -EINVAL;
-    }
+	va_start(args, op);
+	switch ((unsigned int)op) {
+		case GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD:
+		{
+			buffer_handle_t handle = va_arg(args, buffer_handle_t);
+			int *fd = va_arg(args, int *);
 
-    private_handle_t* hnd = (private_handle_t*)handle;
-    if (!hnd->base)
-    {
-        ALOGE("base null");
-        return -EINVAL;
-    }
-    // this is currently only used by camera for yuv420sp
-    // if in future other formats are needed, store to private
-    // handle and change the below code based on private format.
+			err = private_handle_t::validate(handle);
 
-#if 0
-    int ystride = hnd->stride;
-    ycbcr->y  = (void*)hnd->base;
-    ycbcr->cr = (void*)(hnd->base + ystride * hnd->height);
-    ycbcr->cb = (void*)(hnd->base + ystride * hnd->height + 1);
-    ycbcr->ystride = ystride;
-    ycbcr->cstride = ystride;
-    ycbcr->chroma_step = 2;
-    memset(ycbcr->reserved, 0, sizeof(ycbcr->reserved));
-#else
-    int ystride;
-    switch (hnd->format) {
-        case HAL_PIXEL_FORMAT_YCrCb_420_SP:
-		case HAL_PIXEL_FORMAT_YCbCr_420_888:
-            ystride = hnd->stride;
-            ycbcr->y  = (void*)hnd->base;
-            ycbcr->cr = (void*)((unsigned int)hnd->base + ystride * hnd->height);
-            ycbcr->cb = (void*)((unsigned int)hnd->base + ystride * hnd->height + 1);
-            ycbcr->ystride = ystride;
-            ycbcr->cstride = ystride;
-            ycbcr->chroma_step = 2;
-            memset(ycbcr->reserved, 0, sizeof(ycbcr->reserved));
-            break;
+			if (fd == NULL)
+				err = -EINVAL;
 
-      case HAL_PIXEL_FORMAT_YCrCb_NV12:
-            ystride = hnd->stride;
-            ycbcr->y  = (void*)hnd->base;
-            ycbcr->cr = (void*)((unsigned int)hnd->base + ystride *  hnd->height + 1);
-            ycbcr->cb = (void*)((unsigned int)hnd->base + ystride *  hnd->height);
-            ycbcr->ystride = ystride;
-            ycbcr->cstride = ystride;
-            ycbcr->chroma_step = 2;
-            memset(ycbcr->reserved, 0, sizeof(ycbcr->reserved));
-            break;
+			if (err != 0)
+				break;
 
-        case HAL_PIXEL_FORMAT_YV12:
-            ystride = hnd->stride;
-            ycbcr->ystride = ystride;
-            ycbcr->cstride = (ystride/2 + 15) & ~15;
-            ycbcr->y  = (void*)hnd->base;
-            ycbcr->cr = (void*)((unsigned int)hnd->base + ystride * hnd->height);
-            ycbcr->cb = (void*)((unsigned int)hnd->base + ystride * hnd->height + ycbcr->cstride * hnd->height/2);
-            ycbcr->chroma_step = 1;
-            memset(ycbcr->reserved, 0, sizeof(ycbcr->reserved));
-            break;
+			private_handle_t* hnd = (private_handle_t*)handle;
+			err = gralloc_backend_get_fd(hnd,fd);
+		}
+		break;
 
-        case HAL_PIXEL_FORMAT_YCbCr_422_SP:
-            ystride = hnd->stride;
-            ycbcr->y  = (void*)hnd->base;
-            ycbcr->cb = (void*)((unsigned int)hnd->base + ystride * hnd->height);
-            ycbcr->cr = (void*)((unsigned int)hnd->base + ystride * hnd->height + 1);
-            ycbcr->ystride = ystride;
-            ycbcr->cstride = ystride;
-            ycbcr->chroma_step = 2;
-            memset(ycbcr->reserved, 0, sizeof(ycbcr->reserved));
-            break;
+		case GRALLOC_MODULE_PERFORM_GET_HADNLE_ATTRIBUTES:
+		{
+			buffer_handle_t handle = va_arg(args, buffer_handle_t);
+			std::vector<int> *attrs = va_arg(args, std::vector<int> *);
 
-        default:
-            ALOGE("%s: Invalid format passed: 0x%x", __FUNCTION__, hnd->format);
-            return -EINVAL;
-            break;
-    }
-#endif
-    return 0;
+			err = private_handle_t::validate(handle);
+
+			if (attrs == NULL)
+				err = -EINVAL;
+
+			if (err != 0)
+				break;
+
+			private_handle_t* hnd = (private_handle_t*)handle;
+			err = gralloc_backend_get_attrs(hnd, (void*)attrs);
+		}
+		break;
+
+		default:
+			err = -EINVAL;
+		break;
+	}
+	va_end(args);
+
+	return err;
 }
+
 // There is one global instance of the module
 
 static struct hw_module_methods_t gralloc_module_methods =
@@ -336,7 +391,7 @@ private_module_t::private_module_t()
 	base.lock = gralloc_lock;
 	base.unlock = gralloc_unlock;
 	base.lock_ycbcr = gralloc_lock_ycbcr;
-	base.perform = NULL;
+	base.perform = gralloc_perform;
 	INIT_ZERO(base.reserved_proc);
 
 	framebuffer = NULL;

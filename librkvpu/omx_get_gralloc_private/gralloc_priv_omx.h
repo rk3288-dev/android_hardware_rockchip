@@ -34,6 +34,7 @@ typedef struct gralloc_private_handle_t {
     int share_fd;
     int type;
     int stride;
+    int size;
 }gralloc_private_handle_t;
 
 #ifdef __cplusplus

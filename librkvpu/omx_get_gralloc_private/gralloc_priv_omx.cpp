@@ -47,6 +47,7 @@ int32_t Rockchip_get_gralloc_private(uint32_t *handle,gralloc_private_handle_t *
 #endif
     private_hnd->stride = priv_hnd->stride;
     private_hnd->type = priv_hnd->type;
+    private_hnd->size = priv_hnd->size;
     return 0;
 }
 

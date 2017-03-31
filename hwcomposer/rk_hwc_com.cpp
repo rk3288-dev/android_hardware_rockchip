@@ -98,7 +98,11 @@ int hwChangeRgaFormat(IN int fmt )
     case HAL_PIXEL_FORMAT_YCrCb_NV12:
         return RK_FORMAT_YCbCr_420_SP;
 	case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
-	   return RK_FORMAT_YCbCr_420_SP;
+	    return RK_FORMAT_YCbCr_420_SP;
+	case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
+	    /*I do not know why some platform not has the right branch*/
+	    //return RK_FORMAT_YCbCr_420_SP_10B;
+	    return 0x20;
     default:
         return hwcSTATUS_INVALID_ARGUMENT;
     }
@@ -130,7 +134,7 @@ int hwcGetBufferSizeForRga(IN int w,IN int h,IN int fmt)
     return size;
 }
 
-#if VIRTUAL_RGA_BLIT
+#if RGA_BLIT
 hwcSTATUS
 hwcGetBufferInfo(
       hwcContext  * Context,
@@ -161,7 +165,7 @@ hwcGetBufferInfo(
 **  These are collected from hardware/libhardware/include/hardware/hardware.h
 */
 
-#if VIRTUAL_RGA_BLIT
+#if RGA_BLIT
 hwcSTATUS
 hwcGetBufFormat(
       struct private_handle_t * Handle,

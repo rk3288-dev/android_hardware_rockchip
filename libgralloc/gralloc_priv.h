@@ -26,7 +26,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/mman.h>
-
 #include <hardware/gralloc.h>
 #include <cutils/native_handle.h>
 #include "alloc_device.h"
@@ -54,8 +53,8 @@ typedef struct ion_handle *ion_user_handle_t;
 #endif /* MALI_ION */
 
 /* NOTE:
- * If your framebuffer device driver is integrated with UMP, you will have to 
- * change this IOCTL definition to reflect your integration with the framebuffer 
+ * If your framebuffer device driver is integrated with UMP, you will have to
+ * change this IOCTL definition to reflect your integration with the framebuffer
  * device.
  * Expected return value is a UMP secure id backing your framebuffer device memory.
  */
@@ -71,7 +70,7 @@ typedef struct ion_handle *ion_user_handle_t;
  * backing your framebuffer device memory.
  */
 #if GRALLOC_ARM_DMA_BUF_MODULE
-struct fb_dmabuf_export 
+struct fb_dmabuf_export
 {
 	__u32 fd;
 	__u32 flags;
@@ -83,7 +82,7 @@ struct fb_dmabuf_export
  * 8 is big enough for "gpu0" & "fb0" currently
  */
 #define MALI_GRALLOC_HARDWARE_MAX_STR_LEN 8
-#define NUM_FB_BUFFERS 3
+#define NUM_FB_BUFFERS 2
 
 /* Define number of shared file descriptors */
 #if MALI_AFBC_GRALLOC == 1 && GRALLOC_ARM_DMA_BUF_MODULE
@@ -96,11 +95,23 @@ struct fb_dmabuf_export
 
 #define NUM_INTS_IN_PRIVATE_HANDLE ((sizeof(struct private_handle_t) - sizeof(native_handle)) / sizeof(int) - sNumFds)
 
-
+enum
+{
+	/* Buffer won't be allocated as AFBC */
+	GRALLOC_ARM_USAGE_NO_AFBC = GRALLOC_USAGE_PRIVATE_1 | GRALLOC_USAGE_PRIVATE_2
+};
 
 #if GRALLOC_ARM_UMP_MODULE
 #include <ump/ump.h>
 #endif
+
+#define SZ_4K      0x00001000
+#define SZ_2M      0x00200000
+
+enum {
+       GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD        = 0x80000001,
+       GRALLOC_MODULE_PERFORM_GET_HADNLE_ATTRIBUTES      = 0x80000002,
+};
 
 typedef enum
 {
@@ -146,16 +157,15 @@ struct private_module_t
 		PRIV_USAGE_LOCKED_FOR_POST = 0x80000000
 	};
 
+    /*-------------------------------------------------------*/
 /**
- * 对 32_5.x 预期宏配置的检查,
- * 用于检查依赖 private_handle_t 的 模块 (mali_so 等), 编译期对相关宏配置正确. 
+ * 对预期宏配置的检查,
+ * 用于检查依赖 private_handle_t 的 模块 (mali_so 等), 编译期对相关宏配置正确.
  */
 #if GRALLOC_ARM_DMA_BUF_MODULE != 1
 #error
 #endif
-#if MALI_AFBC_GRALLOC != 0
-#error
-#endif
+
 #if GRALLOC_ARM_UMP_MODULE != 0
 #error
 #endif
@@ -177,9 +187,10 @@ struct private_handle_t
 
 	enum
 	{
-		PRIV_FLAGS_FRAMEBUFFER = 0x00000001,
-		PRIV_FLAGS_USES_UMP    = 0x00000002,
-		PRIV_FLAGS_USES_ION    = 0x00000004
+		PRIV_FLAGS_FRAMEBUFFER       = 0x00000001,
+		PRIV_FLAGS_USES_UMP          = 0x00000002,
+		PRIV_FLAGS_USES_ION          = 0x00000004,
+		PRIV_FLAGS_USES_ION_DMA_HEAP = 0x00000008
 	};
 
 	enum
@@ -211,13 +222,15 @@ struct private_handle_t
 	int        magic;
 	int        req_format;
 	uint64_t   internal_format;
-	int        byte_stride;
 	int        flags;
 	int        usage;
 	int        size;
 	int        width;
 	int        height;
+	int        internalWidth;
+	int        internalHeight;
 	int        stride;
+	int        byte_stride;
 	int     type;
 	int     format;
 	// Rk: add for video special process
@@ -259,7 +272,12 @@ struct private_handle_t
 		uint64_t padding5;
 	};
 #endif
-
+	/*
+	 * min_pgsz denotes minimum phys_page size used by this buffer.
+	 * if buffer memory is physical contiguous set min_pgsz to buff->size
+	 * if not sure buff's real phys_page size, you can use SZ_4K for safe.
+	 */
+	int min_pgsz;
 #ifdef __cplusplus
 	/*
 	 * We track the number of integers in the structure. There are 16 unconditional

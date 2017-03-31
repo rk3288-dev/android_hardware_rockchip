@@ -10,8 +10,10 @@ BUILD_VPU_MEM_R_TEST := false
 BUILD_VPU_MEM_DUMP := false
 BUILD_VPU_POOL_TEST := false
 
-include $(CLEAR_VARS)
+# use old vpu framework mpp
+ifeq ($(filter rk3366 rk3399 rk3228 rk3229 rk322x, $(strip $(TARGET_BOARD_PLATFORM))), )
 
+include $(CLEAR_VARS)
 LOCAL_MODULE := libvpu
 
 ifeq ($(PLATFORM_VERSION),4.0.4)
@@ -54,6 +56,7 @@ LOCAL_SRC_FILES := \
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_SHARED_LIBRARY)
 
+endif # TARGET_BOARD_PLATFORM
 
 ifeq ($(BUILD_VPU_MEM_TEST),true)
 include $(CLEAR_VARS)
@@ -64,9 +67,9 @@ LOCAL_PRELINK_MODULE := false
 
 LOCAL_SHARED_LIBRARIES := libion libvpu libcutils
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-            $(LOCAL_PATH)/.. \
-            $(LOCAL_PATH)/include \
-            $(TOP)/hardware/libhardware/include
+    $(LOCAL_PATH)/.. \
+    $(LOCAL_PATH)/include \
+    $(TOP)/hardware/libhardware/include
 LOCAL_SRC_FILES := vpu_mem.c
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_EXECUTABLE)
@@ -81,9 +84,9 @@ LOCAL_ARM_MODE := arm
 LOCAL_PRELINK_MODULE := false
 LOCAL_SHARED_LIBRARIES := libion libvpu libcutils
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-            $(LOCAL_PATH)/.. \
-            $(LOCAL_PATH)/include \
-            $(TOP)/hardware/libhardware/include
+    $(LOCAL_PATH)/.. \
+    $(LOCAL_PATH)/include \
+    $(TOP)/hardware/libhardware/include
 LOCAL_SRC_FILES := vpu.c
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_EXECUTABLE)
@@ -98,9 +101,9 @@ LOCAL_ARM_MODE := arm
 LOCAL_PRELINK_MODULE := false
 LOCAL_SHARED_LIBRARIES := libion libvpu libcutils
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-            $(LOCAL_PATH)/.. \
-            $(LOCAL_PATH)/include \
-            $(TOP)/hardware/libhardware/include
+    $(LOCAL_PATH)/.. \
+    $(LOCAL_PATH)/include \
+    $(TOP)/hardware/libhardware/include
 LOCAL_SRC_FILES := ppOp.cpp
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_EXECUTABLE)
@@ -115,9 +118,9 @@ LOCAL_ARM_MODE := arm
 LOCAL_PRELINK_MODULE := false
 LOCAL_SHARED_LIBRARIES := libion libvpu libcutils
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-            $(LOCAL_PATH)/.. \
-            $(LOCAL_PATH)/include \
-            $(TOP)/hardware/libhardware/include
+    $(LOCAL_PATH)/.. \
+    $(LOCAL_PATH)/include \
+    $(TOP)/hardware/libhardware/include
 LOCAL_SRC_FILES := rk_list.cpp
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_EXECUTABLE)
@@ -173,11 +176,11 @@ LOCAL_PRELINK_MODULE := false
 LOCAL_CFLAGS += -DCONFIG_DUMP_VPU_MEM_APP
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-            $(LOCAL_PATH)/.. \
-            $(LOCAL_PATH)/include \
-            $(LOCAL_PATH)/vpu_mem_pool \
-            $(TOP)/system/core/include \
-            $(TOP)/hardware/libhardware/include
+    $(LOCAL_PATH)/.. \
+    $(LOCAL_PATH)/include \
+    $(LOCAL_PATH)/vpu_mem_pool \
+    $(TOP)/system/core/include \
+    $(TOP)/hardware/libhardware/include
 
 include $(BUILD_EXECUTABLE)
 
