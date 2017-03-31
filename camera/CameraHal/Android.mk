@@ -45,11 +45,8 @@ LOCAL_C_INCLUDES += \
     system/core/libion/include/ion \
     system/core/libion/kernel-headers/linux
 
-#has no "external/stlport" from Android 6.0 on
-ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.0)))
-LOCAL_C_INCLUDES += \
-    external/stlport/stlport
-endif
+# LOCAL_C_INCLUDES += \
+#     external/stlport/stlport
 
 LOCAL_C_INCLUDES += \
     external/skia/include/core \
@@ -74,11 +71,8 @@ LOCAL_SHARED_LIBRARIES:= \
     libexpat \
     libskia \
 
-#has no "external/stlport" from Android 6.0 on
-ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.0)))
 LOCAL_SHARED_LIBRARIES += \
     libstlport
-endif
 
 #LOCAL_STATIC_LIBRARIES :=  libisp_calibdb libtinyxml2 libisp_cam_calibdb libisp_ebase \
 #                           libisp_oslayer libisp_common libisp_hal libisp_isi \
