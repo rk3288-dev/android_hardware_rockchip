@@ -9,9 +9,6 @@ LOCAL_SRC_FILES := \
 	iep_api.cpp
 
 LOCAL_CFLAGS := \
-	$(CFLAGS) \
-	-Wall \
-	-Wextra \
 	-DLOG_TAG=\"libiep\"
 
 LOCAL_C_INCLUDES += $(TOP)/hardware/libhardware/include
