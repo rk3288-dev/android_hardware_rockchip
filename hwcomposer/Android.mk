@@ -16,8 +16,6 @@ LOCAL_PATH := $(call my-dir)
 #
 include $(CLEAR_VARS)
 
-$(info $(shell $(LOCAL_PATH)/version.sh))
-
 LOCAL_SRC_FILES := \
 	rk_hwcomposer.cpp \
 	rk_hwc_com.cpp \
@@ -62,7 +60,7 @@ else
 endif
 
 LOCAL_LDFLAGS := \
-	-Wl,-z,defs	
+	-Wl,-z,defs
 
 LOCAL_SHARED_LIBRARIES := \
 	libhardware \
@@ -81,7 +79,7 @@ LOCAL_SHARED_LIBRARIES := \
 #LOCAL_C_INCLUDES := \
 #	$(LOCAL_PATH)/inc
 
-ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk30xxb)	
+ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk30xxb)
 LOCAL_CFLAGS += -DTARGET_BOARD_PLATFORM_RK30XXB
 endif
 
@@ -191,7 +189,7 @@ endif
 
 #LOCAL_CFLAGS += -DUSE_LCDC_COMPOSER
 
-ifeq ($(strip $(BOARD_USE_LCDC_COMPOSER)),true)	
+ifeq ($(strip $(BOARD_USE_LCDC_COMPOSER)),true)
 LOCAL_CFLAGS += -DUSE_LCDC_COMPOSER
 ifeq ($(strip $(BOARD_LCDC_COMPOSER_LANDSCAPE_ONLY)),false)
 LOCAL_CFLAGS += -DLCDC_COMPOSER_FULL_ANGLE
