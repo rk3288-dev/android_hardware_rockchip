@@ -15,7 +15,7 @@
 #include <cutils/log.h>
 #include "Hdcp.h"
 
-#define RKNAND_GET_SN_SECTOR       _IOW('d', 3, unsigned int) 
+#define RKNAND_GET_SN_SECTOR       _IOW('d', 3, unsigned int)
 #define SN_SECTOR_OP_TAG            0x41444E53 // "SNDA"
 
 #define RKNAND_SYS_STORGAE_DATA_LEN 512
@@ -34,7 +34,7 @@ typedef struct tagRKNAND_SYS_STORGAE
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 extern int init_module(void *, unsigned long, const char *);
 extern int delete_module(const char *, unsigned int);
 #ifdef __cplusplus
@@ -43,7 +43,7 @@ extern int delete_module(const char *, unsigned int);
 void rknand_print_hex_data(uint32 * buf,uint32 len)
 {
 	uint32 i,j,count;
-	
+
 	for(i=0;i<len;i+=4)
 		ALOGD("%08x %08x %08x %08x",buf[i],buf[i+1],buf[i+2],buf[i+3]);
 }
@@ -56,10 +56,10 @@ int hdcp_read_key_from_idb(char **buf)
     int ret ;
 	uint8 *data;
     RKNAND_SYS_STORGAE sysData;
-    
+
     ALOGD("hdcp_read_idb start\n");
     *buf = NULL;
-    
+
     int sys_fd = open("/dev/rknand_sys_storage",O_RDWR,0);
     if(sys_fd < 0){
         ALOGE("rknand_sys_storage open fail\n");
@@ -88,7 +88,7 @@ int hdcp_read_key_from_idb(char **buf)
 	#if HDCP_KEY_ENCRYPTED
 	// If HDCP key is encrypted, add decryption at here.
 	// Decryption Code:
-	
+
 	#else
 	*buf = (char*) malloc(HDCP_KEY_SIZE + HDCP_SEED_SIZE);
 	if (*buf) {
@@ -104,49 +104,49 @@ int hdcp_read_key_from_idb(char **buf)
 static int firmware_loading_enable(void)
 {
 	FILE *fd = NULL;
-	
+
 	fd = fopen(HDCP_FIRMWARE_LOADING, "w");
 	if(fd == NULL)
 		return -1;
-		
+
 	fputc('1', fd);
 	fclose(fd);
-	
+
 	return 0;
 }
 
 static int firmware_loading_disable(void)
 {
 	FILE *fd = NULL;
-	
+
 	fd = fopen(HDCP_FIRMWARE_LOADING, "w");
 	if(fd == NULL)
 		return -1;
-		
+
 	fputc('0', fd);
 	fclose(fd);
-	
+
 	return 0;
 }
 
 static int firmware_loading_cancel(void)
 {
 	FILE *fd = NULL;
-	
+
 	fd = fopen(HDCP_FIRMWARE_LOADING, "w");
 	if(fd == NULL)
 		return -1;
-		
+
 	fputs("-1", fd);
 	fclose(fd);
-	
+
 	return 0;
 }
 
 static int hdcp_read_key(char **buf, int* size)
 {
 #ifdef HDCP_KEY_READ_FROM_FILE
-	FILE *fd = NULL;	
+	FILE *fd = NULL;
 	fd = fopen(KEY_FILE, "r");
 	if(fd == NULL) {
 		*buf = NULL;
@@ -156,13 +156,13 @@ static int hdcp_read_key(char **buf, int* size)
 	}
 	fseek(fd, 0, SEEK_END);
 	*size = ftell(fd);
-	
+
 	*buf = (char*) malloc(*size);
 	if(*buf) {
 		fseek(fd, 0, SEEK_SET);
 		fread(*buf, 1, *size, fd);
 	}
-	
+
 	fclose(fd);
 #else
 	#ifdef HDCP_KEY_READ_FROM_IDB
@@ -184,39 +184,39 @@ static int hdcp_read_srm(char **buf, int* size)
 	int invalid_key_size, filesize;
 	int temp, vrl_length, i;
 	unsigned char data, generation;
-	
+
 	fd = fopen(SRM_FILE, "r");
 	if(fd == NULL) {
 		ALOGE("[%s] can not open file %s\n", __FUNCTION__, SRM_FILE);
 		goto failed;
 	}
-	
+
 	fseek(fd, 0, SEEK_END);
 	filesize = ftell(fd);
 	ALOGD("[%s] SRM file size is %d", __FUNCTION__, filesize);
-	fseek(fd, 0, SEEK_SET);	
+	fseek(fd, 0, SEEK_SET);
 	*buf = (char*) malloc(filesize);
 	if(*buf == NULL) {
 		ALOGE("[%s] no enough memory to malloc srm data.\n", __FUNCTION__);
 		goto failed;
 	}
 	memset(*buf, 0, filesize);
-	
+
 	temp = 0;
 	fread(&temp, 1, 2, fd);
 	if(temp != 0x0080) {
 		ALOGE("[%s] invalid srm file %s\n", __FUNCTION__, SRM_FILE);
 		goto invalid;
 	}
-	
+
 	temp = 0;
 	fread(&temp, 1, 2, fd);
 	ALOGD("[%s] SRM Version 0x%04x", __FUNCTION__, data);
-	
+
 	data = 0;
 	fread(&generation, 1, 1, fd);
 	ALOGD("[%s] SRM Generation %d", __FUNCTION__, generation);
-	
+
 	//VRL Length
 	vrl_length = 0;
 	for(i = 0; i < 3; i++)
@@ -224,15 +224,15 @@ static int hdcp_read_srm(char **buf, int* size)
 		data = 0;
 		fread(&data, 1, 1, fd);
 		vrl_length |= data << ((2 - i) * 8);
-	}	
-	vrl_length -= 40 + 3;	
+	}
+	vrl_length -= 40 + 3;
 	ALOGD("[%s] SRM 1st block vrl size is %d", __FUNCTION__, vrl_length);
 	if(!vrl_length) {
 		ALOGW("[%s] There is no invalid key in SRM file.\n", __FUNCTION__);
 		goto invalid;
 	}
 	invalid_key_size = vrl_length - 1;
-	
+
 	data = 0;
 	fread(&data, 1, 1, fd);
 	ALOGD("[%s] SRM 1st block invalid key number is %d", __FUNCTION__, data);
@@ -242,7 +242,7 @@ static int hdcp_read_srm(char **buf, int* size)
 	}
 	fread(*buf, 1, invalid_key_size , fd);
 	fseek(fd, 40, SEEK_CUR);
-	
+
 	temp = ftell(fd);
 	while(temp < filesize)
 	{
@@ -269,11 +269,11 @@ static int hdcp_read_srm(char **buf, int* size)
 		}
 		temp = ftell(fd);
 	}
-	
+
 	fclose(fd);
 	*size = invalid_key_size;
 	return 0;
-	
+
 invalid:
 	if(*buf) free(*buf);
 	fclose(fd);
@@ -286,19 +286,19 @@ failed:
 static int hdcp_write_fireware(char *key, int keysize, char *srm, int srmsize)
 {
 	FILE *fd = NULL;
-	
+
 	if(key == NULL || keysize == 0)
 		return -1;
-	
+
 	fd = fopen(HDCP_FIRMWARE_DATA, "w");
-	if(fd == NULL) 
+	if(fd == NULL)
 		return -1;
-	
+
 	fwrite(key, 1, keysize, fd);
 	if(srmsize && srm) {
 		fwrite(srm, 1, srmsize, fd);
 	}
-	
+
 	fclose(fd);
 	return 0;
 }
@@ -313,9 +313,9 @@ static int hdcp_load_firmware(void)
 {
 	char *key = NULL, *srm = NULL;
 	int keysize = 0, srmsize, rc = -1, i;
-	
+
 	ALOGD("%s start\n", __FUNCTION__);
-		
+
 	hdcp_read_key(&key, &keysize);
 	hdcp_read_srm(&srm, &srmsize);
 	if(keysize) {
@@ -327,7 +327,7 @@ static int hdcp_load_firmware(void)
 	}
 	if(key)	free(key);
 	if(srm) free(srm);
-		
+
 	return rc;
 }
 
@@ -335,12 +335,12 @@ static void hdcp_set_trytimes(int times)
 {
 	FILE *fd = NULL;
 	char  buf[5];
-	
+
 	fd = fopen(HDCP_TRYTIMES, "w");
 	if(fd == NULL)	return;
-	
+
 	memset(buf, 0, 5);
-	sprintf(buf, "%d", times);	
+	sprintf(buf, "%d", times);
 	fputs(buf, fd);
 	fclose(fd);
 }
@@ -354,7 +354,7 @@ void Hdcp_enable(void)
 	ALOGD("%s", __func__);
 	fd = fopen(HDCP_ENABLE, "w");
 	if(fd == NULL)	return;
-		
+
 	fputc('1', fd);
 	fclose(fd);
 }
@@ -370,8 +370,8 @@ static int insmod(const char *filename)
 	ALOGD("insmod %s", filename);
 	memset(&name, 0, sizeof(name));
 	ret = uname(&name);
-	if (ret == 0 && name.release) {
-		// try insmod filename.x.x.x 
+	if (ret == 0) {
+		// try insmod filename.x.x.x
 		strncat(filename_release, filename, sizeof(filename_release) - 1);
 		strncat(filename_release, ".", sizeof(filename_release) - 1);
 		strncat(filename_release, name.release, sizeof(filename_release) - 1);
@@ -417,7 +417,7 @@ static void hdcp2_init(void)
 
 void Hdcp_init()
 {
-	
+
 	ALOGI("HDCP starting");
 	hdcp_enable = 0;
 	if (access(HDCP_ENABLE, W_OK) == 0) {
@@ -440,6 +440,6 @@ void Hdcp_init()
 	}
 	else
 		ALOGW("Device not support HDCP, just exit.\n");
-	
+
     ALOGI("HDCP exiting");
 }

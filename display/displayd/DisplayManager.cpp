@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -30,7 +31,7 @@
 #define DISPLAY_TYPE_YPbPr	"YPbPr"
 #define DISPLAY_TYPE_TV		"TV"
 
-#define DISPLAY_CONFIG_FILE			"/cache/display.cfg"
+#define DISPLAY_CONFIG_FILE			"/data/display.cfg"
 
 #define CVBS_MODE_PAL	"720x576i-50"
 #define CVBS_MODE_NTSC	"720x480i-60"
@@ -652,7 +653,7 @@ void DisplayManager::saveConfig(void) {
 		fclose(fd);
 	}
 	sync();
-	
+
 	int file;
 	const char *baseparameterfile = GetBaseparameterFile();
 	if (!baseparameterfile) {
@@ -677,47 +678,43 @@ void DisplayManager::saveConfig(void) {
 
 	for(node = main_display_list; node != NULL; node = node->next) {
 		if(node->type == DISPLAY_INTERFACE_HDMI) {
-			if(node->mode) {
-				base_paramer.hdmi.type = node->type;
-				base_paramer.hdmi.interlaced = 0;
+			base_paramer.hdmi.type = node->type;
+			base_paramer.hdmi.interlaced = 0;
 
-				if (strstr(node->mode, "YCbCr420"))
-					base_paramer.hdmi.interlaced |= HDMI_VIDEO_YUV420;
+			if (strstr(node->mode, "YCbCr420"))
+				base_paramer.hdmi.interlaced |= HDMI_VIDEO_YUV420;
 
-				if (strchr(node->mode, 'p')) {
-					sscanf(node->mode, "%dx%dp-%d",
-					       &base_paramer.hdmi.xres,
-					       &base_paramer.hdmi.yres,
-					       &base_paramer.hdmi.refresh);
-				} else if (strchr(node->mode, 'i')) {
-					sscanf(node->mode, "%dx%di-%d",
-					       &base_paramer.hdmi.xres,
-					       &base_paramer.hdmi.yres,
-					       &base_paramer.hdmi.refresh);
-					base_paramer.hdmi.interlaced |= 1;
-				} else if (strcmp(node->mode,"auto") == 0) {
-					base_paramer.hdmi.xres = 0;
-					base_paramer.hdmi.yres = 0;
-					base_paramer.hdmi.refresh = 0;
-				}
-				ALOGD("[%s] hdmi_mode %s\n", __FUNCTION__,node->mode);
-			}
-		} else if(node->type == DISPLAY_INTERFACE_TV) {
-			if(node->mode) {
+			if (strchr(node->mode, 'p')) {
+				sscanf(node->mode, "%dx%dp-%d",
+				       &base_paramer.hdmi.xres,
+				       &base_paramer.hdmi.yres,
+				       &base_paramer.hdmi.refresh);
+			} else if (strchr(node->mode, 'i')) {
 				sscanf(node->mode, "%dx%di-%d",
-				       &base_paramer.tve.xres,
-				       &base_paramer.tve.yres,
-				       &base_paramer.tve.refresh);
-				base_paramer.tve.interlaced = 1;
-				ALOGD("[%s] tve_mode  %s\n", __FUNCTION__,node->mode);
+				       &base_paramer.hdmi.xres,
+				       &base_paramer.hdmi.yres,
+				       &base_paramer.hdmi.refresh);
+				base_paramer.hdmi.interlaced |= 1;
+			} else if (strcmp(node->mode,"auto") == 0) {
+				base_paramer.hdmi.xres = 0;
+				base_paramer.hdmi.yres = 0;
+				base_paramer.hdmi.refresh = 0;
 			}
+			ALOGD("[%s] hdmi_mode %s\n", __FUNCTION__,node->mode);
+		} else if(node->type == DISPLAY_INTERFACE_TV) {
+			sscanf(node->mode, "%dx%di-%d",
+			       &base_paramer.tve.xres,
+			       &base_paramer.tve.yres,
+			       &base_paramer.tve.refresh);
+			base_paramer.tve.interlaced = 1;
+			ALOGD("[%s] tve_mode  %s\n", __FUNCTION__,node->mode);
 		}
 	}
 	lseek(file, 0L, SEEK_SET);
 	write(file, (char*)(&base_paramer), sizeof(base_paramer));
 	close(file);
 	sync();
-	
+
 	ALOGD("[%s] hdmi:%d,%d,%d,%d,%d,%d\n", __FUNCTION__,
 	base_paramer.hdmi.xres,
 	base_paramer.hdmi.yres,
@@ -725,7 +722,7 @@ void DisplayManager::saveConfig(void) {
 	base_paramer.hdmi.type,
 	base_paramer.hdmi.refresh,
 	base_paramer.hdmi.reserve);
-	
+
 	ALOGD("[%s] tve:%d,%d,%d,%d,%d,%d\n", __FUNCTION__,
 	base_paramer.tve.xres,
 	base_paramer.tve.yres,
@@ -1066,7 +1063,7 @@ void DisplayManager::getCurMode(SocketClient *cli, int display, char* iface) {
 		cli->sendMsg(ResponseCode::CommandParameterError, "Missing iface", false);
 		return;
 	}
-	
+
 	if(strlen(node->mode)) {
 	    //ALOGD("[%s] %s %s %s %d %d", __FUNCTION__, node->path, node->mode, node->name,strlen(node->name),strcmp(node->name,"firefly_vga"));
 	    if(strcmp(node->name,"firefly_vga") == 0) {
@@ -1087,7 +1084,7 @@ void DisplayManager::getCurMode(SocketClient *cli, int display, char* iface) {
 			        memset(node->mode, 0, MODE_LENGTH);
 			        memcpy(node->mode, buf, modelen -1);
 		        }
-	        }		
+	        }
 	        fclose(fd);
 	    }
 	}

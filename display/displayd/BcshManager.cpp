@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -55,7 +56,7 @@ void BcshManger::enable()
 void BcshManger::init()
 {
 	char property[PROPERTY_VALUE_MAX];
-	
+
 	mEnable = false;
 	mBrightness = 0;
 	mContrast = 1;
@@ -71,7 +72,7 @@ void BcshManger::init()
 	memset(property, 0, PROPERTY_VALUE_MAX);
 	if(property_get("persist.sys.bcsh.saturation", property, 0) > 0)
 		setSaturation(0, atof(property));
-	memset(property, 0, PROPERTY_VALUE_MAX);	
+	memset(property, 0, PROPERTY_VALUE_MAX);
 	if(property_get("persist.sys.bcsh.hue", property, 0) > 0)
 		setHue(0, atof(property));
 }
@@ -93,7 +94,7 @@ int BcshManger::setBrightness(int display,int brightness)
 
 	memset(buf, 0, BUFFER_LENGTH);
 	strcpy(buf, BCSH_SYSFS_NODE);
-	
+
 	fd = fopen(buf, "wb");
 	if(fd == NULL)
 		return -1;
@@ -186,7 +187,7 @@ int BcshManger::setHue(int display, float degree)
 	FILE *fd = NULL;
 	int sin_hue, cos_hue;
 	char buf[BUFFER_LENGTH];
-	
+
 	if (degree < -30 || degree > 30)
 		return -1;
 

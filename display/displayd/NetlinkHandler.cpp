@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 
 #define LOG_TAG "DisplayD"
@@ -56,28 +57,28 @@ void NetlinkHandler::onEvent(NetlinkEvent *evt) {
 	}
 	//	ALOGD("subsys %s", subsys);
 	if (!strcmp(subsys, "display")) {
-		int action = evt->getAction();
-		if (action == evt->NlActionAdd) {
+		NetlinkEvent::Action action = evt->getAction();
+		if (action == NetlinkEvent::Action::kAdd) {
 			const char *iface = evt->findParam("INTERFACE");
 			const char *screen = evt->findParam("SCREEN");
 			if(iface && screen)
 				ALOGW("iface id %s screen is %s", iface, screen);
 			notifyInterfaceAdded(iface, screen);
-		} else if (action == evt->NlActionRemove) {
+		} else if (action == NetlinkEvent::Action::kRemove) {
 			const char *iface = evt->findParam("INTERFACE");
 			const char *screen = evt->findParam("SCREEN");
 			if(iface && screen)
 				ALOGW("iface id %s screen is %s", iface, screen);
 			notifyInterfaceRemoved(iface, screen);
-		} else if (action == evt->NlActionChange) {
+		} else if (action == NetlinkEvent::Action::kChange) {
 			//            evt->dump();
 			const char *type = "TRIGGER";//evt->findParam("TRIGGER");
 			notifyInterfaceChanged(type, true);
 		}
 	} else if (!strcmp(subsys, "hdmi_hdcp2")) {
 		evt->dump();
-		int action = evt->getAction();
-		if (action == evt->NlActionChange) {
+		NetlinkEvent::Action action = evt->getAction();
+		if (action == NetlinkEvent::Action::kChange) {
 			const char *start = evt->findParam("START");
 			if (start)
 				rk_hdmi_hdcp2_start();

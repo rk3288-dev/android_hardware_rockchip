@@ -15,6 +15,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
 
 #include <sys/socket.h>
@@ -37,12 +38,12 @@ const int NetlinkManager::NFLOG_QUOTA_GROUP = 1;
 
 NetlinkManager *NetlinkManager::sInstance = NULL;
 DisplayManager *NetlinkManager::mDisplayManager = NULL;
-	
+
 NetlinkManager *NetlinkManager::Instance(DisplayManager *dm) {
     if (!sInstance)
         sInstance = new NetlinkManager();
     if(!mDisplayManager)
-    	mDisplayManager = dm;    
+    	mDisplayManager = dm;
     return sInstance;
 }
 
