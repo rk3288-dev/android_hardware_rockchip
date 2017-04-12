@@ -7,9 +7,9 @@
 #include <signal.h>
 #include <pthread.h>
 #include <cutils/properties.h>
+#include <hardware/rga.h>
 #include "cutils/log.h"
 #include "iep_api.h"
-#include "rga.h"
 
 #define PI  (3.1415926)
 
