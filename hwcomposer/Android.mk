@@ -44,6 +44,7 @@ LOCAL_C_INCLUDES := \
 	$(AQROOT)/sdk/inc \
 	$(AQROOT)/hal/inc
 
+LOCAL_C_INCLUDES += hardware/rockchip/include
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc/ump/include
 
 LOCAL_C_INCLUDES += \
