@@ -111,27 +111,6 @@ static void rk_power_hint(struct power_module *module, power_hint_t hint, void *
     case POWER_HINT_VSYNC:
         break;
 
-    case POWER_HINT_PERFORMANCE_MODE:
-        mode = *(int*)data;
-        //ALOGD("POWER_HINT_PERFORMANCE_MODE: %d\n", mode);
-        if (PERFORMANCE_MODE_PERFORMANCE == mode) {
-            if (support_turn_pm_policy) {
-                ALOGD("Try to turn pm policy\n");
-                sysfs_write("/sys/module/rockchip_pm/parameters/policy", "0");
-            }
-            sysfs_write("/dev/video_state", "p");
-        } else if(PERFORMANCE_MODE_NORMAL == mode) {
-            if (support_turn_pm_policy) {
-                sysfs_write("/sys/module/rockchip_pm/parameters/policy", "1");
-            }
-            sysfs_write("/dev/video_state", "n");
-        } else {
-            if (support_turn_pm_policy) {
-                sysfs_write("/sys/module/rockchip_pm/parameters/policy", "1");
-            }
-            sysfs_write("/dev/video_state", "n");
-        }
-        break;
     default:
         break;
     }
