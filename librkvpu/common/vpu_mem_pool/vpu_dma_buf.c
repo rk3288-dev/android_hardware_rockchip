@@ -21,8 +21,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include <linux/rockchip_ion.h>
 #include <ion/ion.h>
+#include <ion/rockchip_ion.h>
 
 #include <cutils/log.h>
 

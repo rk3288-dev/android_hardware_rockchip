@@ -4,10 +4,10 @@
 #define CAMERA_MEM_PMEM 0
 #define CAMERA_MEM_ION  1
 #define CAMERA_MEM_IONDMA  2
-/* 
-*NOTE: 
-*   configuration macro 
-*      
+/*
+*NOTE:
+*   configuration macro
+*
 */
 #if  (defined(TARGET_RK32) || defined(TARGET_RK312x) || defined(TARGET_RK3188))
 #define CONFIG_CAMERA_MEM               CAMERA_MEM_IONDMA
@@ -19,14 +19,14 @@
 #if (CONFIG_CAMERA_MEM == CAMERA_MEM_ION)
 #include <ion/IonAlloc.h>
 #elif (CONFIG_CAMERA_MEM == CAMERA_MEM_PMEM)
-#ifdef HAVE_ANDROID_OS 
+#ifdef HAVE_ANDROID_OS
 #include <linux/android_pmem.h>
 #include <binder/MemoryHeapPmem.h>
 #endif
 
 #elif (CONFIG_CAMERA_MEM == CAMERA_MEM_IONDMA)
-#include <rockchip_ion.h>
-#include <ion.h>
+#include <ion/rockchip_ion.h>
+#include <ion/ion.h>
 #endif
 #include <binder/IMemory.h>
 namespace android {
@@ -52,7 +52,7 @@ struct bufferinfo_s{
 
 typedef enum buffer_addr_e {
     buffer_addr_phy,
-    buffer_addr_vir,    
+    buffer_addr_vir,
 	buffer_sharre_fd
 }buffer_addr_t;
 
@@ -108,12 +108,12 @@ class PmemManager:public MemManagerBase{
 		int deinitPmem();
 	private:
 		int mPmemFd;
-		unsigned int mPmemSize; 
+		unsigned int mPmemSize;
 		unsigned int mPmemHeapPhyBase;
 		sp<MemoryHeapBase> mMemHeap;
 		sp<MemoryHeapBase> mMemHeapPmem;
-		sp<IMemory> mJpegBuffer; 
-		sp<IMemory> mRawBuffer;  
+		sp<IMemory> mJpegBuffer;
+		sp<IMemory> mRawBuffer;
         sp<IMemory> **mPreviewBuffer;
 };
 #endif

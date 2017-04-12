@@ -1,10 +1,10 @@
 #include <stdio.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <utils/Log.h>
-#include <linux/videodev2.h> 
+#include <linux/videodev2.h>
 #include <binder/IPCThreadState.h>
 #include "CameraHal.h"
 
@@ -26,8 +26,10 @@
 #include "../libgralloc/gralloc_priv.h"
 #endif
 
+#include <system/graphics_extended.h>
+
 #include "../jpeghw/release/encode_release/rk29-ipp.h"
-#include <utils/CallStack.h> 
+#include <utils/CallStack.h>
 
 #define MIN(x,y)   ((x<y) ? x: y)
 #define MAX(x,y)    ((x>y) ? x: y)
@@ -48,7 +50,7 @@
 #define CAMERA_DISPLAY_FORMAT_NV12       "nv12"
 
 
-extern "C" int cameraFormatConvert(int v4l2_fmt_src, int v4l2_fmt_dst, const char *android_fmt_dst, 
+extern "C" int cameraFormatConvert(int v4l2_fmt_src, int v4l2_fmt_dst, const char *android_fmt_dst,
 						 char *srcbuf, char *dstbuf,long srcphy,long dstphy,int src_size,
 						 int src_w, int src_h, int srcbuf_w,
 						 int dst_w, int dst_h, int dstbuf_w,
@@ -62,15 +64,15 @@ extern "C" int getCallingPid() {
 
 
 extern "C" void callStack(){
-    android::CallStack stack;  
-    stack.update();  
+    android::CallStack stack;
+    stack.update();
     stack.log("CameraHal");
 
 }
 extern "C" char* getCallingProcess()
 {
     int fp = -1;
-	cameraCallProcess[0] = 0x00; 
+	cameraCallProcess[0] = 0x00;
 	sprintf(cameraCallProcess,"/proc/%d/cmdline",getCallingPid());
 
 	fp = open(cameraCallProcess, O_RDONLY);
@@ -78,7 +80,7 @@ extern "C" char* getCallingProcess()
 	if (fp < 0) {
 		memset(cameraCallProcess,0x00,sizeof(cameraCallProcess));
 		LOGE("Obtain calling process info failed");
-	} 
+	}
 	else {
 		memset(cameraCallProcess,0x00,sizeof(cameraCallProcess));
 		read(fp, cameraCallProcess, 29);
@@ -93,9 +95,9 @@ extern "C" char* getCallingProcess()
 extern "C" int cameraPixFmt2HalPixFmt(const char *fmt)
 {
     int hal_pixel_format=HAL_PIXEL_FORMAT_YCrCb_NV12;
-    
+
     if (strcmp(fmt,android::CameraParameters::PIXEL_FORMAT_RGB565) == 0) {
-        hal_pixel_format = HAL_PIXEL_FORMAT_RGB_565;        
+        hal_pixel_format = HAL_PIXEL_FORMAT_RGB_565;
     } else if (strcmp(fmt,android::CameraParameters::PIXEL_FORMAT_YUV420SP) == 0) {
         hal_pixel_format = HAL_PIXEL_FORMAT_YCrCb_NV12;
     }else if(strcmp(fmt,android::CameraParameters::PIXEL_FORMAT_YUV420P) == 0){
@@ -106,7 +108,7 @@ extern "C" int cameraPixFmt2HalPixFmt(const char *fmt)
         hal_pixel_format = HAL_PIXEL_FORMAT_YCbCr_422_SP;
     } else {
         hal_pixel_format = -EINVAL;
-        LOGE("%s(%d): pixel format %s is unknow!",__FUNCTION__,__LINE__,fmt);        
+        LOGE("%s(%d): pixel format %s is unknow!",__FUNCTION__,__LINE__,fmt);
     }
 
     return hal_pixel_format;
@@ -123,23 +125,23 @@ extern "C" void arm__scale_crop_nv12torgb565(int srcW, int srcH,int dstW,int dst
     char* src,*psY,*psUV,*dst,*pdUV,*pdY;
 	long zoomindstxIntInv,zoomindstyIntInv;
 	long sX,sY,sY_UV;
-    
+
 	long yCoeff00_y,yCoeff01_y,xCoeff00_y,xCoeff01_y;
 	long yCoeff00_uv,yCoeff01_uv,xCoeff00_uv,xCoeff01_uv;
 	long r0,r1,a,b,c,d,ry,ru,rv;
 
     int y, u, v, yy, vr, ug, vg, ub,r,g,b1;
 
-    
+
 
 	src = psY = (unsigned char*)(srcbuf)+top_offset*src_w+left_offset;
 	//psUV = psY +src_w*src_h+top_offset*src_w/2+left_offset;
 	psUV = (unsigned char*)(srcbuf) +src_w*src_h+top_offset*src_w/2+left_offset;
 
-	
 
-	
-	dst = pdY = (unsigned char*)dstbuf; 
+
+
+	dst = pdY = (unsigned char*)dstbuf;
 	pdUV = pdY + dst_w*dst_h;
 
     	//need crop ?
@@ -147,7 +149,7 @@ extern "C" void arm__scale_crop_nv12torgb565(int srcW, int srcH,int dstW,int dst
 		ratio = ((src_w*100/dst_w) >= (src_h*100/dst_h))?(src_h*100/dst_h):(src_w*100/dst_w);
 		cropW = ratio*dst_w/100;
 		cropH = ratio*dst_h/100;
-		
+
 		left_offset=((src_w-cropW)>>1) & (~0x01);
 		top_offset=((src_h-cropH)>>1) & (~0x01);
 	}else{
@@ -162,18 +164,18 @@ extern "C" void arm__scale_crop_nv12torgb565(int srcW, int srcH,int dstW,int dst
 
     for (line = 0; line < dstH; line++) {
 		yCoeff00_y = (line*zoomindstyIntInv)&0xffff;
-		yCoeff01_y = 0xffff - yCoeff00_y; 
+		yCoeff01_y = 0xffff - yCoeff00_y;
 		sY = (line*zoomindstyIntInv >> 16);
-		sY = (sY >= srcH - 1)? (srcH - 2) : sY; 
-        
+		sY = (sY >= srcH - 1)? (srcH - 2) : sY;
+
         sY_UV = = ((line/2)*zoomindstyIntInv >> 16);
-	    sY_UV = (sY_UV >= uv_src_h - 1)? (uv_src_h - 2) : sY_UV; 
+	    sY_UV = (sY_UV >= uv_src_h - 1)? (uv_src_h - 2) : sY_UV;
         for (col = 0; col < dstW; col++) {
 
 
             //get y
 			xCoeff00_y = (col*zoomindstxIntInv)&0xffff;
-			xCoeff01_y = 0xffff - xCoeff00_y;	
+			xCoeff01_y = 0xffff - xCoeff00_y;
 			sX = (col*zoomindstxIntInv >> 16);
 			sX = (sX >= srcW -1)?(srcW- 2) : sX;
 			a = psY[sY*srcW + sX];
@@ -187,7 +189,7 @@ extern "C" void arm__scale_crop_nv12torgb565(int srcW, int srcH,int dstW,int dst
 
             //get u & v
 			xCoeff00_uv = ((col/2)*zoomindstxIntInv)&0xffff;
-			xCoeff01_uv = 0xffff - xCoeff00_uv;	
+			xCoeff01_uv = 0xffff - xCoeff00_uv;
 			sX = ((col/2)*zoomindstxIntInv >> 16);
 			sX = (sX >= uv_src_w -1)?(uv_src_w- 2) : sX;
 			//U
@@ -231,7 +233,7 @@ extern "C" void arm__scale_crop_nv12torgb565(int srcW, int srcH,int dstW,int dst
             if (b < 0)   b = 0;
             if (b > 255) b = 255;
 
-            
+
         }
     }
 #endif
@@ -243,7 +245,7 @@ extern "C" void arm_nv12torgb565(int width, int height, char *src, short int *ds
     int line, col;
     int y, u, v, yy, vr, ug, vg, ub;
     int r, g, b;
-    char *py, *pu, *pv;    
+    char *py, *pu, *pv;
 
     py = src;
     pu = py + (width * height);
@@ -256,7 +258,7 @@ extern "C" void arm_nv12torgb565(int width, int height, char *src, short int *ds
     v = *pv - 128;
     vg = 183 * v;
     vr = 359 * v;
-    
+
     for (line = 0; line < height; line++) {
         for (col = 0; col < width; col++) {
             r = (yy +      vr) >> 8;
@@ -268,7 +270,7 @@ extern "C" void arm_nv12torgb565(int width, int height, char *src, short int *ds
             if (g > 255) g = 255;
             if (b < 0)   b = 0;
             if (b > 255) b = 255;
-            
+
             *dst++ = (((__u16)r>>3)<<11) | (((__u16)g>>2)<<5) | (((__u16)b>>3)<<0);
 
             y = *py++;
@@ -285,7 +287,7 @@ extern "C" void arm_nv12torgb565(int width, int height, char *src, short int *ds
             }
         }
         dst += dstbuf_w - width;
-        if ((line & 1) == 0) { 
+        if ((line & 1) == 0) {
             //even line: rewind
             pu -= width;
             pv = pu+1;
@@ -313,7 +315,7 @@ extern "C" int rga_nv12torgb565(int src_width, int src_height, char *src, short 
 #if (CONFIG_CAMERA_INVALIDATE_RGA==0)
     struct rga_req  Rga_Request;
     int err = 0;
-    
+
     memset(&Rga_Request,0x0,sizeof(Rga_Request));
 
 	unsigned char *psY, *psUV;
@@ -325,7 +327,7 @@ extern "C" int rga_nv12torgb565(int src_width, int src_height, char *src, short 
 		ratio = ((src_width*100/dst_width) >= (src_height*100/dst_height))?(src_height*100/dst_height):(src_width*100/dst_width);
 		cropW = ratio*dst_width/100;
 		cropH = ratio*dst_height/100;
-		
+
 		left_offset=((src_width-cropW)>>1) & (~0x01);
 		top_offset=((src_height-cropH)>>1) & (~0x01);
 	}else{
@@ -337,7 +339,7 @@ extern "C" int rga_nv12torgb565(int src_width, int src_height, char *src, short 
 
 	psY = (unsigned char*)(src)+top_offset*src_width+left_offset;
 	psUV = (unsigned char*)(src) +src_width*src_height+top_offset*src_width/2+left_offset;
-	
+
 	Rga_Request.src.yrgb_addr =  (long)psY;
     Rga_Request.src.uv_addr  = (long)psUV;
     Rga_Request.src.v_addr   =  Rga_Request.src.uv_addr;
@@ -382,7 +384,7 @@ extern "C" int rga_nv12torgb565(int src_width, int src_height, char *src, short 
     if(ioctl(rgafd, RGA_BLIT_SYNC, &Rga_Request) != 0) {
         LOGE("%s(%d):  RGA_BLIT_ASYNC Failed", __FUNCTION__, __LINE__);
         err = -1;
-    }    
+    }
     return err;
 #else
     LOGE("%s(%d): RGA is invalidate!",__FUNCTION__, __LINE__);
@@ -394,10 +396,10 @@ extern "C" int rga_nv12torgb565(int src_width, int src_height, char *src, short 
 #endif
 }
 
-extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst, 
+extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst,
 									char *srcbuf, char *dstbuf,int src_w, int src_h,int dst_w, int dst_h,bool mirror,int zoom_val);
 
-extern "C" int rga_nv12_scale_crop(int src_width, int src_height, char *src, short int *dst, 
+extern "C" int rga_nv12_scale_crop(int src_width, int src_height, char *src, short int *dst,
 										int dst_width,int dst_height,int zoom_val,bool mirror,bool isNeedCrop,bool isDstNV21)
 {
     int rgafd = -1,ret = -1;
@@ -412,20 +414,20 @@ extern "C" int rga_nv12_scale_crop(int src_width, int src_height, char *src, sho
 	/*has something wrong with rga of rk312x mirror operation*/
 	#if defined(TARGET_RK312x)
 		if(mirror){
-			return arm_camera_yuv420_scale_arm(V4L2_PIX_FMT_NV12, (isDstNV21 ? V4L2_PIX_FMT_NV21:V4L2_PIX_FMT_NV12), 
+			return arm_camera_yuv420_scale_arm(V4L2_PIX_FMT_NV12, (isDstNV21 ? V4L2_PIX_FMT_NV21:V4L2_PIX_FMT_NV12),
 				src, (char *)dst,src_width, src_height,dst_width, dst_height,true,zoom_val);
 		}
-	#endif 
+	#endif
 	/*rk3188 do not support yuv to yuv scale by rga*/
 	#if defined(TARGET_RK3188)
-		return arm_camera_yuv420_scale_arm(V4L2_PIX_FMT_NV12, (isDstNV21 ? V4L2_PIX_FMT_NV21:V4L2_PIX_FMT_NV12), 
+		return arm_camera_yuv420_scale_arm(V4L2_PIX_FMT_NV12, (isDstNV21 ? V4L2_PIX_FMT_NV21:V4L2_PIX_FMT_NV12),
 			src, (char *)dst,src_width, src_height,dst_width, dst_height,true,zoom_val);
-	#endif 
-	
+	#endif
+
 	if((dst_width > RGA_VIRTUAL_W) || (dst_height > RGA_VIRTUAL_H)){
 		LOGE("%s(%d):(dst_width > RGA_VIRTUAL_W) || (dst_height > RGA_VIRTUAL_H), switch to arm ",__FUNCTION__,__LINE__);
-		
-		return arm_camera_yuv420_scale_arm(V4L2_PIX_FMT_NV12, (isDstNV21 ? V4L2_PIX_FMT_NV21:V4L2_PIX_FMT_NV12), 
+
+		return arm_camera_yuv420_scale_arm(V4L2_PIX_FMT_NV12, (isDstNV21 ? V4L2_PIX_FMT_NV21:V4L2_PIX_FMT_NV12),
 			src, (char *)dst,src_width, src_height,dst_width, dst_height,mirror,zoom_val);
 	}
 
@@ -434,7 +436,7 @@ extern "C" int rga_nv12_scale_crop(int src_width, int src_height, char *src, sho
 		ratio = ((src_width*100/dst_width) >= (src_height*100/dst_height))?(src_height*100/dst_height):(src_width*100/dst_width);
 		zoom_cropW = ratio*dst_width/100;
 		zoom_cropH = ratio*dst_height/100;
-		
+
 		zoom_left_offset=((src_width-zoom_cropW)>>1) & (~0x01);
 		zoom_top_offset=((src_height-zoom_cropH)>>1) & (~0x01);
 	}else{
@@ -451,7 +453,7 @@ extern "C" int rga_nv12_scale_crop(int src_width, int src_height, char *src, sho
 		zoom_top_offset= ((src_height-zoom_cropH)>>1) & (~0x01);
 	}
 
-		
+
     if(dst_width > RGA_ACTIVE_W){
 	        scale_times_w = (dst_width/RGA_ACTIVE_W);
 			scale_times_w++;
@@ -459,7 +461,7 @@ extern "C" int rga_nv12_scale_crop(int src_width, int src_height, char *src, sho
         scale_times_w = 1;
 	}
 	if(dst_height > RGA_ACTIVE_H){
-		scale_times_h = (dst_height/RGA_ACTIVE_H);   
+		scale_times_h = (dst_height/RGA_ACTIVE_H);
 		scale_times_h++;
     } else {
 		scale_times_h = 1;
@@ -469,13 +471,13 @@ extern "C" int rga_nv12_scale_crop(int src_width, int src_height, char *src, sho
         ret = -1;
     	return ret;
 	}
-	
+
 	src_cropW = zoom_cropW/scale_times_w;
 	src_cropH = zoom_cropH/scale_times_h;
-	
+
 	dst_cropW = dst_width/scale_times_w;
 	dst_cropH = dst_height/scale_times_h;
-	
+
 	for(h = 0; h< scale_times_h; h++){
 		for(w = 0; w< scale_times_w; w++){
 		    memset(&Rga_Request,0x0,sizeof(Rga_Request));
@@ -518,9 +520,9 @@ extern "C" int rga_nv12_scale_crop(int src_width, int src_height, char *src, sho
 		    Rga_Request.dst.v_addr   = 0;
 		    Rga_Request.dst.vir_w = dst_width;
 		    Rga_Request.dst.vir_h = dst_height;
-		    if(isDstNV21) 
+		    if(isDstNV21)
 		        Rga_Request.dst.format = RK_FORMAT_YCrCb_420_SP;
-		    else 
+		    else
 		        Rga_Request.dst.format = RK_FORMAT_YCbCr_420_SP;
 		    Rga_Request.clip.xmin = 0;
 		    Rga_Request.clip.xmax = dst_width - 1;
@@ -529,12 +531,12 @@ extern "C" int rga_nv12_scale_crop(int src_width, int src_height, char *src, sho
 		    Rga_Request.dst.act_w = dst_cropW;
 		    Rga_Request.dst.act_h = dst_cropH;
 		    Rga_Request.dst.x_offset = dst_left_offset;
-		    Rga_Request.dst.y_offset = dst_top_offset;    
+		    Rga_Request.dst.y_offset = dst_top_offset;
 
 		    Rga_Request.mmu_info.mmu_en    = 1;
 		    Rga_Request.mmu_info.mmu_flag  = ((2 & 0x3) << 4) | 1 | (1 << 8) | (1 << 10);
 		    Rga_Request.alpha_rop_flag |= (1 << 5);             /* ddl@rock-chips.com: v0.4.3 */
-		    
+
 			#if defined(TARGET_RK312x)
 				/* wrong operation of nv12 to nv21 ,not scale */
 				if(1/*(cropW != dst_width) || ( cropH != dst_height)*/){
@@ -552,7 +554,7 @@ extern "C" int rga_nv12_scale_crop(int src_width, int src_height, char *src, sho
 		    	Rga_Request.rotate_mode = mirror ? 2:0;
 				Rga_Request.render_mode = pre_scaling_mode;
 			}
-		    
+
 
 		    if(ioctl(rgafd, RGA_BLIT_SYNC, &Rga_Request) != 0) {
 		        LOGE("%s(%d):  RGA_BLIT_ASYNC Failed", __FUNCTION__, __LINE__);
@@ -561,14 +563,14 @@ extern "C" int rga_nv12_scale_crop(int src_width, int src_height, char *src, sho
 		}
 	}
 	close(rgafd);
-	
+
     return err;
 }
 
-extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst, 
+extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst,
 									char *srcbuf, char *dstbuf,int src_w, int src_h,int dst_w, int dst_h,bool mirror,int zoom_val)
 {
-	unsigned char *psY,*pdY,*psUV,*pdUV; 
+	unsigned char *psY,*pdY,*psUV,*pdUV;
 	unsigned char *src,*dst;
 	int srcW,srcH,cropW,cropH,dstW,dstH;
 	long zoomindstxIntInv,zoomindstyIntInv;
@@ -591,12 +593,12 @@ extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst,
         &&(src_w == dst_w) && (src_h == dst_h) && (zoom_val == 100)){
         memcpy(dstbuf,srcbuf,src_w*src_h*3/2);
         return 0;
-    }else if((v4l2_fmt_dst == V4L2_PIX_FMT_NV21) 
-            && (src_w == dst_w) && (src_h == dst_h) 
+    }else if((v4l2_fmt_dst == V4L2_PIX_FMT_NV21)
+            && (src_w == dst_w) && (src_h == dst_h)
             && (mirror == false) && (zoom_val == 100)){
     //just convert fmt
 
-        cameraFormatConvert(V4L2_PIX_FMT_NV12, V4L2_PIX_FMT_NV21, NULL, 
+        cameraFormatConvert(V4L2_PIX_FMT_NV12, V4L2_PIX_FMT_NV21, NULL,
     					    srcbuf, dstbuf,0,0,src_w*src_h*3/2,
     					    src_w, src_h,src_w,
     					    dst_w, dst_h,dst_w,
@@ -607,7 +609,7 @@ extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst,
 
 	if ((v4l2_fmt_dst == V4L2_PIX_FMT_NV21)){
 		nv21DstFmt = true;
-		
+
 	}
 
 	//need crop ?
@@ -615,7 +617,7 @@ extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst,
 		ratio = ((src_w*100/dst_w) >= (src_h*100/dst_h))?(src_h*100/dst_h):(src_w*100/dst_w);
 		cropW = ratio*dst_w/100;
 		cropH = ratio*dst_h/100;
-		
+
 		left_offset=((src_w-cropW)>>1) & (~0x01);
 		top_offset=((src_h-cropH)>>1) & (~0x01);
 	}else{
@@ -637,14 +639,14 @@ extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst,
 	//psUV = psY +src_w*src_h+top_offset*src_w/2+left_offset;
 	psUV = (unsigned char*)(srcbuf) +src_w*src_h+top_offset*src_w/2+left_offset;
 
-	
+
 	srcW =src_w;
 	srcH = src_h;
 //	cropW = src_w;
 //	cropH = src_h;
 
-	
-	dst = pdY = (unsigned char*)dstbuf; 
+
+	dst = pdY = (unsigned char*)dstbuf;
 	pdUV = pdY + dst_w*dst_h;
 	dstW = dst_w;
 	dstH = dst_h;
@@ -652,15 +654,15 @@ extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst,
 	zoomindstxIntInv = ((unsigned long)(cropW)<<16)/dstW + 1;
 	zoomindstyIntInv = ((unsigned long)(cropH)<<16)/dstH + 1;
 	//y
-	//for(y = 0; y<dstH - 1 ; y++ ) {	
-	for(y = 0; y<dstH; y++ ) {	 
+	//for(y = 0; y<dstH - 1 ; y++ ) {
+	for(y = 0; y<dstH; y++ ) {
 		yCoeff00 = (y*zoomindstyIntInv)&0xffff;
-		yCoeff01 = 0xffff - yCoeff00; 
+		yCoeff01 = 0xffff - yCoeff00;
 		sY = (y*zoomindstyIntInv >> 16);
-		sY = (sY >= srcH - 1)? (srcH - 2) : sY; 	 
+		sY = (sY >= srcH - 1)? (srcH - 2) : sY;
 		for(x = 0; x<dstW; x++ ) {
 			xCoeff00 = (x*zoomindstxIntInv)&0xffff;
-			xCoeff01 = 0xffff - xCoeff00;	
+			xCoeff01 = 0xffff - xCoeff00;
 			sX = (x*zoomindstxIntInv >> 16);
 			sX = (sX >= srcW -1)?(srcW- 2) : sX;
 			a = psY[sY*srcW + sX];
@@ -671,7 +673,7 @@ extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst,
 			r0 = (a * xCoeff01 + b * xCoeff00)>>16 ;
 			r1 = (c * xCoeff01 + d * xCoeff00)>>16 ;
 			r0 = (r0 * yCoeff01 + r1 * yCoeff00)>>16;
-			
+
 			if(mirror)
 				pdY[dstW -1 - x] = r0;
 			else
@@ -689,12 +691,12 @@ extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst,
 	//for(y = 0; y<dstH - 1 ; y++ ) {
 	for(y = 0; y<dstH; y++ ) {
 		yCoeff00 = (y*zoomindstyIntInv)&0xffff;
-		yCoeff01 = 0xffff - yCoeff00; 
+		yCoeff01 = 0xffff - yCoeff00;
 		sY = (y*zoomindstyIntInv >> 16);
-		sY = (sY >= srcH -1)? (srcH - 2) : sY;		
+		sY = (sY >= srcH -1)? (srcH - 2) : sY;
 		for(x = 0; x<dstW; x++ ) {
 			xCoeff00 = (x*zoomindstxIntInv)&0xffff;
-			xCoeff01 = 0xffff - xCoeff00;	
+			xCoeff01 = 0xffff - xCoeff00;
 			sX = (x*zoomindstxIntInv >> 16);
 			sX = (sX >= srcW -1)?(srcW- 2) : sX;
 			//U
@@ -706,7 +708,7 @@ extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst,
 			r0 = (a * xCoeff01 + b * xCoeff00)>>16 ;
 			r1 = (c * xCoeff01 + d * xCoeff00)>>16 ;
 			r0 = (r0 * yCoeff01 + r1 * yCoeff00)>>16;
-		
+
 			if(mirror && nv21DstFmt)
 				pdUV[dstW*2-1- (x*2)] = r0;
 			else if(mirror)
@@ -737,7 +739,7 @@ extern "C"  int arm_camera_yuv420_scale_arm(int v4l2_fmt_src, int v4l2_fmt_dst,
 		pdUV += dstW*2;
 	}
 	return 0;
-}	
+}
 
 extern "C" int rk_camera_zoom_ipp(int v4l2_fmt_src, int srcbuf, int src_w, int src_h,int dstbuf,int zoom_value)
 {
@@ -760,11 +762,11 @@ extern "C" int rk_camera_zoom_ipp(int v4l2_fmt_src, int srcbuf, int src_w, int s
 	}
 
     /*
-    *ddl@rock-chips.com: 
+    *ddl@rock-chips.com:
     * IPP Dest image resolution is 2047x1088, so scale operation break up some times
     */
     if ((src_w > 0x7f0) || (src_h > 0x430)) {
-        scale_w_times = ((src_w/0x7f0)>(src_h/0x430))?(src_w/0x7f0):(src_h/0x430); 
+        scale_w_times = ((src_w/0x7f0)>(src_h/0x430))?(src_w/0x7f0):(src_h/0x430);
         scale_h_times = scale_w_times;
         scale_w_times++;
         scale_h_times++;
@@ -775,16 +777,16 @@ extern "C" int rk_camera_zoom_ipp(int v4l2_fmt_src, int srcbuf, int src_w, int s
     memset(&ipp_req, 0, sizeof(struct rk29_ipp_req));
 
 
-    //compute zoom 
+    //compute zoom
 	cropW = (src_w*100/zoom_value)& (~0x03);
 	cropH = (src_h*100/zoom_value)& (~0x03);
 	left_offset=MAX((((src_w-cropW)>>1)-1),0);
 	top_offset=MAX((((src_h-cropH)>>1)-1),0);
-    left_offset &= ~0x01; 
+    left_offset &= ~0x01;
     top_offset &=~0x01;
 
     ipp_req.timeout = 3000;
-    ipp_req.flag = IPP_ROT_0; 
+    ipp_req.flag = IPP_ROT_0;
     ipp_req.store_clip_mode =1;
     ipp_req.src0.w = cropW/scale_w_times;
     ipp_req.src0.h = cropH/scale_h_times;
@@ -792,7 +794,7 @@ extern "C" int rk_camera_zoom_ipp(int v4l2_fmt_src, int srcbuf, int src_w, int s
     ipp_req.src0.fmt = IPP_Y_CBCR_H2V2;
     ipp_req.dst0.w = src_w/scale_w_times;
     ipp_req.dst0.h = src_h/scale_h_times;
-    ipp_req.dst_vir_w = src_w;   
+    ipp_req.dst_vir_w = src_w;
     ipp_req.dst0.fmt = IPP_Y_CBCR_H2V2;
     vipdata_base = srcbuf;
     src_y_size = src_w*src_h;
@@ -801,7 +803,7 @@ extern "C" int rk_camera_zoom_ipp(int v4l2_fmt_src, int srcbuf, int src_w, int s
     for (h=0; h<scale_h_times; h++) {
         for (w=0; w<scale_w_times; w++) {
             int ipp_times = 3;
-            src_y_offset = (top_offset + h*cropH/scale_h_times)* src_w 
+            src_y_offset = (top_offset + h*cropH/scale_h_times)* src_w
                         + left_offset + w*cropW/scale_w_times;
 		    src_uv_offset = (top_offset + h*cropH/scale_h_times)* src_w/2
                         + left_offset + w*cropW/scale_w_times;
@@ -830,11 +832,11 @@ extern "C" int rk_camera_zoom_ipp(int v4l2_fmt_src, int srcbuf, int src_w, int s
 do_ipp_err:
     if(ippFd > 0)
        close(ippFd);
-    
-	return ret;    
+
+	return ret;
 }
 
-extern "C" int rk_camera_yuv_scale_crop_ipp(int v4l2_fmt_src, int v4l2_fmt_dst, 
+extern "C" int rk_camera_yuv_scale_crop_ipp(int v4l2_fmt_src, int v4l2_fmt_dst,
 			long srcbuf, long dstbuf,int src_w, int src_h,int dst_w, int dst_h,bool rotation_180)
 {
 	long vipdata_base;
@@ -857,11 +859,11 @@ extern "C" int rk_camera_yuv_scale_crop_ipp(int v4l2_fmt_src, int v4l2_fmt_dst,
 
 
     /*
-    *ddl@rock-chips.com: 
+    *ddl@rock-chips.com:
     * IPP Dest image resolution is 2047x1088, so scale operation break up some times
     */
     if ((dst_w > 0x7f0) || (dst_h > 0x430)) {
-        scale_w_times = ((dst_w/0x7f0)>(dst_h/0x430))?(dst_w/0x7f0):(dst_h/0x430); 
+        scale_w_times = ((dst_w/0x7f0)>(dst_h/0x430))?(dst_w/0x7f0):(dst_h/0x430);
         scale_h_times = scale_w_times;
         scale_w_times++;
         scale_h_times++;
@@ -876,10 +878,10 @@ extern "C" int rk_camera_yuv_scale_crop_ipp(int v4l2_fmt_src, int v4l2_fmt_dst,
 		ratio = ((src_w*100/dst_w) >= (src_h*100/dst_h))?(src_h*100/dst_h):(src_w*100/dst_w);
 		cropW = (ratio*dst_w/100)& (~0x03);
 		cropH = (ratio*dst_h/100)& (~0x03);
-		
+
 		left_offset=MAX((((src_w-cropW)>>1)-1),0);
 		top_offset=MAX((((src_h-cropH)>>1)-1),0);
-        left_offset &= ~0x01; 
+        left_offset &= ~0x01;
         top_offset &=~0x01;
 	}else{
 		cropW = src_w;
@@ -893,16 +895,16 @@ extern "C" int rk_camera_yuv_scale_crop_ipp(int v4l2_fmt_src, int v4l2_fmt_dst,
         scale_h_times = 3;
 		cropW = dst_w;
 		cropH = dst_h;
-		
+
 		left_offset=0;
 		top_offset=242;
     }
 #endif
     ipp_req.timeout = 3000;
     if(rotation_180)
-        ipp_req.flag = IPP_ROT_180; 
+        ipp_req.flag = IPP_ROT_180;
     else
-        ipp_req.flag = IPP_ROT_0; 
+        ipp_req.flag = IPP_ROT_0;
     ipp_req.store_clip_mode =1;
     ipp_req.src0.w = cropW/scale_w_times;
     ipp_req.src0.h = cropH/scale_h_times;
@@ -913,7 +915,7 @@ extern "C" int rk_camera_yuv_scale_crop_ipp(int v4l2_fmt_src, int v4l2_fmt_dst,
         ipp_req.src0.fmt = IPP_Y_CBCR_H2V1;
     ipp_req.dst0.w = dst_w/scale_w_times;
     ipp_req.dst0.h = dst_h/scale_h_times;
-    ipp_req.dst_vir_w = dst_w;   
+    ipp_req.dst_vir_w = dst_w;
     if(v4l2_fmt_dst == V4L2_PIX_FMT_NV12)
         ipp_req.dst0.fmt = IPP_Y_CBCR_H2V2;
     else if(v4l2_fmt_dst == V4L2_PIX_FMT_NV21)
@@ -924,7 +926,7 @@ extern "C" int rk_camera_yuv_scale_crop_ipp(int v4l2_fmt_src, int v4l2_fmt_dst,
     for (h=0; h<scale_h_times; h++) {
         for (w=0; w<scale_w_times; w++) {
             int ipp_times = 3;
-            src_y_offset = (top_offset + h*cropH/scale_h_times)* src_w 
+            src_y_offset = (top_offset + h*cropH/scale_h_times)* src_w
                         + left_offset + w*cropW/scale_w_times;
 		    src_uv_offset = (top_offset + h*cropH/scale_h_times)* src_w/2
                         + left_offset + w*cropW/scale_w_times;
@@ -959,7 +961,7 @@ extern "C" int rk_camera_yuv_scale_crop_ipp(int v4l2_fmt_src, int v4l2_fmt_dst,
 do_ipp_err:
     if(ippFd > 0)
        close(ippFd);
-	return ret;    
+	return ret;
 }
 
 extern "C"  int YData_Mirror_Line(int v4l2_fmt_src, int *psrc, int *pdst, int w)
@@ -980,7 +982,7 @@ extern "C"  int UVData_Mirror_Line(int v4l2_fmt_src, int *psrc, int *pdst, int w
     int i;
 
     for (i=0; i<(w>>2); i++) {
-        *pdst = ((*psrc>>16)&0x0000ffff) | ((*psrc<<16)&0xffff0000);                
+        *pdst = ((*psrc>>16)&0x0000ffff) | ((*psrc<<16)&0xffff0000);
         psrc++;
         pdst--;
     }
@@ -994,10 +996,10 @@ extern "C"  int YuvData_Mirror_Flip(int v4l2_fmt_src, char *pdata, char *pline_t
     int err = 0,i,j;
 
     pdata_tmp = (int*)pline_tmp;
-    
+
     // Y mirror and flip
     ptop = (int*)pdata;
-    pbottom = (int*)(pdata+w*(h-1));    
+    pbottom = (int*)(pdata+w*(h-1));
     for (j=0; j<(h>>1); j++) {
         YData_Mirror_Line(v4l2_fmt_src, ptop, pdata_tmp+((w>>2)-1),w);
         YData_Mirror_Line(v4l2_fmt_src, pbottom, ptop+((w>>2)-1), w);
@@ -1007,7 +1009,7 @@ extern "C"  int YuvData_Mirror_Flip(int v4l2_fmt_src, char *pdata, char *pline_t
     }
     // UV mirror and flip
     ptop = (int*)(pdata+w*h);
-    pbottom = (int*)(pdata+w*(h*3/2-1));    
+    pbottom = (int*)(pdata+w*(h*3/2-1));
     for (j=0; j<(h>>2); j++) {
         UVData_Mirror_Line(v4l2_fmt_src, ptop, pdata_tmp+((w>>2)-1),w);
         UVData_Mirror_Line(v4l2_fmt_src, pbottom, ptop+((w>>2)-1), w);
@@ -1025,7 +1027,7 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 	// 90 , y plane
   if(rotate_angle == 90){
       srcy += src_stride * (height - 1);
-  	  srcuv += src_stride * ((height >> 1)- 1); 
+  	  srcuv += src_stride * ((height >> 1)- 1);
   	  src_stride = -src_stride;
 	}else if(rotate_angle == 270){
       dsty += dst_stride * (width - 1);
@@ -1035,9 +1037,9 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 
   for (i = 0; i < width; ++i)
     for (j = 0; j < height; ++j)
-      *(dsty+i * dst_stride + j) = *(srcy+j * src_stride + i); 
-  
-  //uv 
+      *(dsty+i * dst_stride + j) = *(srcy+j * src_stride + i);
+
+  //uv
   unsigned char av_u0,av_v0;
   for (i = 0; i < width; i += 2)
     for (j = 0; j < (height>>1); ++j) {
@@ -1046,11 +1048,11 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
       *(dstuv+((j<<1) + ((i >> 1) * dst_stride)))= av_u0;
       *(dstuv+((j<<1) + ((i >> 1) * dst_stride)+1)) = av_v0;
 	}
-   
+
   return 0;
  }
 
- extern "C" int cameraFormatConvert(int v4l2_fmt_src, int v4l2_fmt_dst, const char *android_fmt_dst, 
+ extern "C" int cameraFormatConvert(int v4l2_fmt_src, int v4l2_fmt_dst, const char *android_fmt_dst,
 							 char *srcbuf, char *dstbuf,long srcphy,long dstphy,int src_size,
 							 int src_w, int src_h, int srcbuf_w,
 							 int dst_w, int dst_h, int dstbuf_w,
@@ -1059,7 +1061,7 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 	 int y_size,i,j;
 	 int ret = -1;
 	 /*
-	 if (v4l2_fmt_dst) { 
+	 if (v4l2_fmt_dst) {
 		 LOGD("cameraFormatConvert '%c%c%c%c'@(0x%x,0x%x,%dx%d)->'%c%c%c%c'@(0x%x,0x%x,%dx%d) ",
 					 v4l2_fmt_src & 0xFF, (v4l2_fmt_src >> 8) & 0xFF,
 					 (v4l2_fmt_src >> 16) & 0xFF, (v4l2_fmt_src >> 24) & 0xFF,
@@ -1074,14 +1076,14 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 					 , (int)srcbuf, srcphy,src_w,src_h,android_fmt_dst, (int)dstbuf,dstphy,
 					  dst_w,dst_h);
 	 }
-	 */  
-	 
+	 */
+
 	 y_size = src_w*src_h;
 	 switch (v4l2_fmt_src)
 	 {
 		 case V4L2_PIX_FMT_YUV420:
 		 {
-//			 if (CAMERA_IS_UVC_CAMERA() 
+//			 if (CAMERA_IS_UVC_CAMERA()
 //				 || (CAMERA_IS_RKSOC_CAMERA() && (mCamDriverCapability.version != KERNEL_VERSION(0, 0, 1)))) {
 //				 goto cameraFormatConvert_default;
 //			 }
@@ -1089,8 +1091,8 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 		 case V4L2_PIX_FMT_NV12:
 		 {
 			 int *dst_vu, *src_uv;
- 
-			 if ((v4l2_fmt_dst == V4L2_PIX_FMT_NV12) || 
+
+			 if ((v4l2_fmt_dst == V4L2_PIX_FMT_NV12) ||
 				 (android_fmt_dst && (strcmp(android_fmt_dst,CAMERA_DISPLAY_FORMAT_NV12)==0))) {
 				 if (dstbuf && (dstbuf != srcbuf)) {
 					 if (dstbuf_w == dst_w) {
@@ -1104,33 +1106,33 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 					 }
 					 ret = 0;
 				 }
-			 } else if ((v4l2_fmt_dst == V4L2_PIX_FMT_NV21) || 
+			 } else if ((v4l2_fmt_dst == V4L2_PIX_FMT_NV21) ||
 				 (android_fmt_dst && (strcmp(android_fmt_dst,android::CameraParameters::PIXEL_FORMAT_YUV420SP)==0))) {
 				 if ((src_w == dst_w) && (src_h == dst_h)) {
 					 if (mirror == false) {
 						 if (dstbuf != srcbuf)
 							 memcpy(dstbuf,srcbuf, y_size);
-						 src_uv = (int*)(srcbuf + y_size); 
+						 src_uv = (int*)(srcbuf + y_size);
 						 dst_vu = (int*)(dstbuf+y_size);
 						 for (i=0; i<(y_size>>3); i++) {
 							 *dst_vu = ((*src_uv&0x00ff00ff)<<8) | ((*src_uv&0xff00ff00)>>8);
 							 dst_vu++;
 							 src_uv++;
 						 }
-					 } else {						 
+					 } else {
 						 char *psrc,*pdst;
 						 psrc = srcbuf;
 						 pdst = dstbuf + dst_w-1;
-						 for (i=0; i<src_h; i++) {							  
+						 for (i=0; i<src_h; i++) {
 							 for (j=0; j<src_w; j++) {
 								 *pdst-- = *psrc++;
 							 }
 							 pdst += 2*dst_w;
 						 }
- 
-						 psrc = srcbuf + y_size; 
+
+						 psrc = srcbuf + y_size;
 						 pdst = dstbuf + y_size + dst_w-1;
-						 for (i=0; i<src_h/2; i++) {							
+						 for (i=0; i<src_h/2; i++) {
 							 for (j=0; j<src_w; j++) {
 								 *pdst-- = *psrc++;
 							 }
@@ -1139,14 +1141,14 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 					 }
 					 ret = 0;
 				 } else {
-					 if ((v4l2_fmt_dst == V4L2_PIX_FMT_NV21) || 
+					 if ((v4l2_fmt_dst == V4L2_PIX_FMT_NV21) ||
 						 (android_fmt_dst && (strcmp(android_fmt_dst,android::CameraParameters::PIXEL_FORMAT_YUV420SP)==0))) {
-						 int *dst_uv,*src_uv; 
+						 int *dst_uv,*src_uv;
 						 unsigned *dst_y,*src_y,*src_y1;
 						 int a, b, c, d;
 						 if ((src_w == dst_w*4) && (src_h == dst_h*4)) {
 							 dst_y = (unsigned int*)dstbuf;
-							 src_y = (unsigned int*)srcbuf; 	 
+							 src_y = (unsigned int*)srcbuf;
 							 src_y1= src_y + (src_w*3)/4;
 							 for (i=0; i<dst_h; i++) {
 								 for(j=0; j<dst_w/4; j++) {
@@ -1188,7 +1190,7 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 						 }
 						 ret = 0;
 					 } else {
-						 if (v4l2_fmt_dst) {	
+						 if (v4l2_fmt_dst) {
 							 LOGE("cameraFormatConvert '%c%c%c%c'@(0x%x,0x%x)->'%c%c%c%c'@(0x%x,0x%x), %dx%d->%dx%d "
 								  "scale isn't support",
 										 v4l2_fmt_src & 0xFF, (v4l2_fmt_src >> 8) & 0xFF,
@@ -1204,14 +1206,14 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 										 , (long)srcbuf, srcphy,android_fmt_dst, (long)dstbuf,dstphy,
 										  src_w,src_h,dst_w,dst_h);
 						 }
-					 }			
+					 }
 				 }
 			 } else if (android_fmt_dst && (strcmp(android_fmt_dst,android::CameraParameters::PIXEL_FORMAT_RGB565)==0)) {
-/*				 
+/*
 				 if (srcphy && dstphy) {
-                #ifdef TARGET_RK29 
+                #ifdef TARGET_RK29
 					 YUV2RGBParams	para;
- 
+
 					 memset(&para, 0x00, sizeof(YUV2RGBParams));
 					 para.yuvAddr = srcphy;
 					 para.outAddr = dstphy;
@@ -1221,30 +1223,30 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 					 para.outheight = (dst_h + 15)&(~15);
 					 para.inColor  = PP_IN_YUV420sp;
 					 para.outColor	= PP_OUT_RGB565;
- 
-					 ret = doYuvToRgb(&para);	 
+
+					 ret = doYuvToRgb(&para);
                 #else
 					 LOGE("%s(%d): Convert nv12 to rgb565 isn't support physical address in current paltform",__FUNCTION__,__LINE__);
                 #endif
 				 } else if (srcbuf && dstbuf) {
 					 if(mRGAFd > 0) {
-						 ret = rga_nv12torgb565(mRGAFd,src_w,src_h,srcbuf, (short int*)dstbuf,dstbuf_w);					   
+						 ret = rga_nv12torgb565(mRGAFd,src_w,src_h,srcbuf, (short int*)dstbuf,dstbuf_w);
 					 } else {
-						 ret = arm_nv12torgb565(src_w,src_h,srcbuf, (short int*)dstbuf,dstbuf_w);				  
+						 ret = arm_nv12torgb565(src_w,src_h,srcbuf, (short int*)dstbuf,dstbuf_w);
 					 }
 				 }
 */			 } else if (android_fmt_dst && (strcmp(android_fmt_dst,android::CameraParameters::PIXEL_FORMAT_YUV420P)==0)) {
 				 char *dst_u,*dst_v,*src_y,*dst_y,*srcuv;
 				 int dstc_size,dsty_size, align_dstw,align_dsthalfw;
-				 
-				 if ((src_w == dst_w) && (src_h == dst_h)) { 
+
+				 if ((src_w == dst_w) && (src_h == dst_h)) {
 					 align_dstw = ((dst_w+15)&0xfffffff0);
 					 align_dsthalfw = ((dst_w/2+15)&0xfffffff0);
 					 dsty_size = align_dstw*dst_h;
 					 dstc_size = align_dsthalfw*dst_h/2;
 					 src_y = srcbuf;
 					 dst_y = dstbuf;
-					 
+
 					 if (mirror == false) {
 						 for (j=0; j<src_h; j++) {
 							 for (i=0; i<src_w; i++) {
@@ -1252,35 +1254,35 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 							 }
 							 dst_y += align_dstw-src_w;
 						 }
-						 
-						 srcuv = (char*)(srcbuf + y_size); 
+
+						 srcuv = (char*)(srcbuf + y_size);
 						 dst_u = (char*)(dstbuf+dsty_size);
 						 dst_v = dst_u + dstc_size;
- 
+
 						 for (j=0; j<src_h/2; j++) {
-							 for (i=0; i<src_w/2; i++) {						
+							 for (i=0; i<src_w/2; i++) {
 								 *dst_v++ = *srcuv++;
 								 *dst_u++ = *srcuv++;
 							 }
 							 dst_u += align_dsthalfw-src_w/2;
 							 dst_v += align_dsthalfw-src_w/2;
 						 }
-						 
-					 } else {						 
+
+					 } else {
 						 char *psrc,*pdst;
 						 psrc = srcbuf;
 						 pdst = dstbuf + dst_w-1;
-						 for (i=0; i<src_h; i++) {							  
+						 for (i=0; i<src_h; i++) {
 							 for (j=0; j<src_w; j++) {
 								 *pdst-- = *psrc++;
 							 }
 							 pdst += 2*align_dstw - (align_dstw - dst_w);
 						 }
- 
-						 psrc = srcbuf + y_size; 
+
+						 psrc = srcbuf + y_size;
 						 dst_u = dstbuf + dsty_size + dst_w/2-1;
 						 dst_v = dst_u + dstc_size;
-						 for (i=0; i<src_h/2; i++) {							
+						 for (i=0; i<src_h/2; i++) {
 							 for (j=0; j<src_w/2; j++) {
 								 *dst_v-- = *psrc++;
 								 *dst_u-- = *psrc++;
@@ -1289,7 +1291,7 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 							 dst_v += align_dsthalfw*2 - (align_dsthalfw - dst_w/2);
 						 }
 					 }
- 
+
 					 ret = 0;
 				 }
 			 }
@@ -1297,11 +1299,11 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 		 }
 		 case V4L2_PIX_FMT_YUV422P:
 		 {
-//			 if (CAMERA_IS_UVC_CAMERA() 
+//			 if (CAMERA_IS_UVC_CAMERA()
 //				 || (mCamDriverCapability.version != KERNEL_VERSION(0, 0, 1))) {
 //				 goto cameraFormatConvert_default;
 //			 }
-		 }		  
+		 }
 		 case V4L2_PIX_FMT_NV16:
 		 {
 			 break;
@@ -1310,15 +1312,15 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 		 {
 			 char *srcbuf_begin;
 			 int *dstint_y, *dstint_uv, *srcint;
-			 
-			 if ((v4l2_fmt_dst == V4L2_PIX_FMT_NV12) || 
-				 ((v4l2_fmt_dst == V4L2_PIX_FMT_YUV420)/* && CAMERA_IS_RKSOC_CAMERA() 
-				 && (mCamDriverCapability.version == KERNEL_VERSION(0, 0, 1))*/)) { 
+
+			 if ((v4l2_fmt_dst == V4L2_PIX_FMT_NV12) ||
+				 ((v4l2_fmt_dst == V4L2_PIX_FMT_YUV420)/* && CAMERA_IS_RKSOC_CAMERA()
+				 && (mCamDriverCapability.version == KERNEL_VERSION(0, 0, 1))*/)) {
 				 if ((src_w == dst_w) && (src_h == dst_h)) {
-					 dstint_y = (int*)dstbuf;				 
+					 dstint_y = (int*)dstbuf;
 					 srcint = (int*)srcbuf;
 					 dstint_uv =  (int*)(dstbuf + y_size);
-					 /* 
+					 /*
 					  * author :zyh
 					  * neon code for YUYV to YUV420
 					  */
@@ -1355,7 +1357,7 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 						 for (j=0; j<(src_w>>2); j++) {
 							 if(i%2 == 0){
 								*dstint_uv++ = (*(srcint+1)&0xff000000)|((*(srcint+1)&0x0000ff00)<<8)
-										 |((*srcint&0xff000000)>>16)|((*srcint&0x0000ff00)>>8); 
+										 |((*srcint&0xff000000)>>16)|((*srcint&0x0000ff00)>>8);
 							 }
 							 *dstint_y++ = ((*(srcint+1)&0x00ff0000)<<8)|((*(srcint+1)&0x000000ff)<<16)
 							 				 |((*srcint&0x00ff0000)>>8)|(*srcint&0x000000ff);
@@ -1366,7 +1368,7 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 #endif
 					 ret = 0;
 				 } else {
-					 if (v4l2_fmt_dst) {	
+					 if (v4l2_fmt_dst) {
 						 LOGE("cameraFormatConvert '%c%c%c%c'@(0x%x,0x%x)->'%c%c%c%c'@(0x%x,0x%x), %dx%d->%dx%d "
 							  "scale isn't support",
 									 v4l2_fmt_src & 0xFF, (v4l2_fmt_src >> 8) & 0xFF,
@@ -1383,11 +1385,11 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 									  src_w,src_h,dst_w,dst_h);
 					 }
 				 }
- 
-			 } else if ((v4l2_fmt_dst == V4L2_PIX_FMT_NV21)|| 
+
+			 } else if ((v4l2_fmt_dst == V4L2_PIX_FMT_NV21)||
 						(android_fmt_dst && (strcmp(android_fmt_dst,android::CameraParameters::PIXEL_FORMAT_YUV420SP)==0))) {
 				 if ((src_w==dst_w) && (src_h==dst_h)) {
-					 dstint_y = (int*)dstbuf;				 
+					 dstint_y = (int*)dstbuf;
 					 srcint = (int*)srcbuf;
 					 for(i=0;i<(y_size>>2);i++) {
 						 *dstint_y++ = ((*(srcint+1)&0x00ff0000)<<8)|((*(srcint+1)&0x000000ff)<<16)
@@ -1399,14 +1401,14 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 					 for(i=0;i<src_h/2; i++) {
 						 for (j=0; j<(src_w>>2); j++) {
 							 *dstint_uv++ = ((*(srcint+1)&0xff000000)>>8)|((*(srcint+1)&0x0000ff00)<<16)
-										 |((*srcint&0xff000000)>>24)|(*srcint&0x0000ff00); 
+										 |((*srcint&0xff000000)>>24)|(*srcint&0x0000ff00);
 							 srcint += 2;
 						 }
-						 srcint += (src_w>>1);	
-					 } 
+						 srcint += (src_w>>1);
+					 }
 					 ret = 0;
 				 } else {
-					 if (v4l2_fmt_dst) {	
+					 if (v4l2_fmt_dst) {
 						 LOGE("cameraFormatConvert '%c%c%c%c'@(0x%x,0x%x)->'%c%c%c%c'@(0x%x,0x%x), %dx%d->%dx%d "
 							  "scale isn't support",
 									 v4l2_fmt_src & 0xFF, (v4l2_fmt_src >> 8) & 0xFF,
@@ -1423,7 +1425,7 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 									  src_w,src_h,dst_w,dst_h);
 					 }
 				 }
-			 }			  
+			 }
 			 break;
 		 }
 		 case V4L2_PIX_FMT_RGB565:
@@ -1431,7 +1433,7 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 			 if (android_fmt_dst && (strcmp(android_fmt_dst,android::CameraParameters::PIXEL_FORMAT_RGB565)==0)){
 				 if (srcbuf && dstbuf && (srcbuf != dstbuf)){
 					/* if(mRGAFd > 0) {
-						 ret = rga_rgb565_cp(mRGAFd,src_w,src_h,srcbuf, (short int*)dstbuf);					   
+						 ret = rga_rgb565_cp(mRGAFd,src_w,src_h,srcbuf, (short int*)dstbuf);
 					 } else {
 						 memcpy(dstbuf,srcbuf,src_w*src_h*2);
 						 ret = 0;
@@ -1440,21 +1442,21 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 			 }
 			 break;
 		 }
- 
+
 		 case V4L2_PIX_FMT_MJPEG:
 		 {
 		 	#if 0
-			 VPU_FRAME outbuf; 
+			 VPU_FRAME outbuf;
 			 unsigned int output_len;
 			 unsigned int input_len,i,j,w,h;
 			 FILE *fp;
 			 char filename[50];
 			 unsigned int *psrc,*pdst;
-			 
+
 			 output_len = 0;
 			 input_len = src_size;
-			 if (v4l2_fmt_dst == V4L2_PIX_FMT_NV12) {				 
-				 
+			 if (v4l2_fmt_dst == V4L2_PIX_FMT_NV12) {
+
 				 ret = mMjpegDecoder.decode(mMjpegDecoder.decoder,(unsigned char*)&outbuf, &output_len, (unsigned char*)srcbuf, &input_len);
 				 if ((ret >= 0) && (output_len == sizeof(VPU_FRAME))) {
 					 VPUMemLink(&outbuf.vpumem);
@@ -1465,10 +1467,10 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 					 if (mirror == false) {
 						 memcpy(dstbuf, outbuf.vpumem.vir_addr,w*h*3/2);
 					 } else {
-						 pdst = (unsigned int*)(dstbuf); 
+						 pdst = (unsigned int*)(dstbuf);
 						 psrc = (unsigned int*)outbuf.vpumem.vir_addr;
 						 pdst += ((w>>2)-1);
-						 for (j=0; j<h; j++) {							  
+						 for (j=0; j<h; j++) {
 							 for (i=0; i<(w>>2); i++) {
 								 *pdst = ((*psrc>>24)&0x000000ff) | ((*psrc>>8)&0x0000ff00)
 										 | ((*psrc<<8)&0x00ff0000) | ((*psrc<<24)&0xff000000);
@@ -1477,14 +1479,14 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 							 }
 							 pdst += (w>>1);
 						 }
- 
-						 pdst = (unsigned int*)dstbuf; 
+
+						 pdst = (unsigned int*)dstbuf;
 						 psrc = (unsigned int*)outbuf.vpumem.vir_addr;
- 
+
 						 pdst += (w*h/4);
 						 psrc += (w*h/4);
 						 pdst += ((w>>2)-1);
-						 for (j=0; j<(h/2); j++) {							  
+						 for (j=0; j<(h/2); j++) {
 							 for (i=0; i<(w>>2); i++) {
 								 *pdst = ((*psrc>>16)&0x0000ffff) | ((*psrc<<16)&0xffff0000);
 								 psrc++;
@@ -1498,12 +1500,12 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 					 LOGE("%s(%d): mjpeg decode failed! ret:%d	output_len: 0x%x, src_buf: %p, input_len: %d",__FUNCTION__,__LINE__,
 						 ret,output_len,srcbuf, input_len);
 				 }
-			 } 
+			 }
 			 #endif
-			 break;			
+			 break;
 		 }
-		 
- cameraFormatConvert_default:		 
+
+ cameraFormatConvert_default:
 		 default:
 			 if (android_fmt_dst) {
 				 LOGE("%s(%d): CameraHal is not support (%c%c%c%c -> %s)",__FUNCTION__,__LINE__,
@@ -1519,7 +1521,7 @@ extern "C" int YUV420_rotate(const unsigned char* srcy, int src_stride,  unsigne
 			 break;
 	 }
 	 return ret;
- 
+
  }
 
 

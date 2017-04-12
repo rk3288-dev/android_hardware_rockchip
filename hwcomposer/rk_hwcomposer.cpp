@@ -33,8 +33,9 @@
 #include "hwc_rga.h"
 #include <linux/ion.h>
 #include <ion/ion.h>
-#include <linux/rockchip_ion.h>
 #include <utils/Trace.h>
+
+#include <system/graphics_extended.h>
 
 /*---------------------------------------------------------------------------*/
 

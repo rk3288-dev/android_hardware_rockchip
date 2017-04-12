@@ -24,6 +24,8 @@
 #include <hardware/hardware.h>
 #include <hardware/gralloc.h>
 
+#include <system/graphics_extended.h>
+
 #include <vector>
 
 #include "gralloc_priv.h"

@@ -30,7 +30,7 @@ LOCAL_ARM_MODE := arm
 LOCAL_PRELINK_MODULE := false
 
 
-LOCAL_SHARED_LIBRARIES := libcutils libion
+LOCAL_SHARED_LIBRARIES := libcutils libion libion.rockchip
 LOCAL_STATIC_LIBRARIES := #ibion_vpu #libvpu_mem_pool
 
 LOCAL_C_INCLUDES := \
@@ -39,10 +39,6 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/libvpu_mem_pool \
     hardware/libhardware/include
-
-LOCAL_C_INCLUDES += \
-    system/core/libion/include \
-    system/core/libion/kernel-headers
 
 LOCAL_SRC_FILES := \
     vpu_mem_dmabuf.c \
@@ -65,7 +61,7 @@ LOCAL_CFLAGS += -Wno-multichar -DBUILD_VPU_MEM_TEST=1
 LOCAL_ARM_MODE := arm
 LOCAL_PRELINK_MODULE := false
 
-LOCAL_SHARED_LIBRARIES := libion libvpu libcutils
+LOCAL_SHARED_LIBRARIES := libion libion.rockchip libvpu libcutils
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
     $(LOCAL_PATH)/.. \
     $(LOCAL_PATH)/include \
@@ -82,7 +78,7 @@ LOCAL_MODULE := vpu_test
 LOCAL_CFLAGS += -Wno-multichar -DBUILD_VPU_TEST=1
 LOCAL_ARM_MODE := arm
 LOCAL_PRELINK_MODULE := false
-LOCAL_SHARED_LIBRARIES := libion libvpu libcutils
+LOCAL_SHARED_LIBRARIES := libion libion.rockchip libvpu libcutils
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
     $(LOCAL_PATH)/.. \
     $(LOCAL_PATH)/include \
@@ -99,7 +95,7 @@ LOCAL_MODULE := pp_test
 LOCAL_CPPFLAGS += -Wno-multichar -DBUILD_PPOP_TEST=1
 LOCAL_ARM_MODE := arm
 LOCAL_PRELINK_MODULE := false
-LOCAL_SHARED_LIBRARIES := libion libvpu libcutils
+LOCAL_SHARED_LIBRARIES := libion libion.rockchip libvpu libcutils
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
     $(LOCAL_PATH)/.. \
     $(LOCAL_PATH)/include \
@@ -116,7 +112,7 @@ LOCAL_MODULE := rk_list_test
 LOCAL_CFLAGS += -Wno-multichar -DBUILD_RK_LIST_TEST=1
 LOCAL_ARM_MODE := arm
 LOCAL_PRELINK_MODULE := false
-LOCAL_SHARED_LIBRARIES := libion libvpu libcutils
+LOCAL_SHARED_LIBRARIES := libion libion.rockchip libvpu libcutils
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
     $(LOCAL_PATH)/.. \
     $(LOCAL_PATH)/include \
@@ -139,7 +135,8 @@ LOCAL_SRC_FILES := \
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libvpu \
-    libion
+    libion \
+    libion.rockchip
 
 #LOCAL_STATIC_LIBRARIES := libion_vpu libvpu_mem_pool
 
@@ -165,7 +162,8 @@ LOCAL_SRC_FILES := \
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libvpu \
-    libion
+    libion \
+    libion.rockchip
 
 #LOCAL_STATIC_LIBRARIES := libion_vpu libvpu_mem_pool
 
@@ -201,7 +199,8 @@ LOCAL_SRC_FILES := \
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
-    libion
+    libion \
+    libion.rockchip
 
 #LOCAL_STATIC_LIBRARIES := libion_vpu libvpu_mem_pool
 
@@ -212,10 +211,10 @@ LOCAL_PRELINK_MODULE := false
 LOCAL_CFLAGS += -DVPU_MEMORY_BLOCK_TEST -DVPU_MBLK_DEBUG
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH) \
-            $(LOCAL_PATH)/.. \
-            $(LOCAL_PATH)/include \
-            $(LOCAL_PATH)/vpu_mem_pool \
-            $(TOP)/system/core/include
+    $(LOCAL_PATH)/.. \
+    $(LOCAL_PATH)/include \
+    $(LOCAL_PATH)/vpu_mem_pool \
+    $(TOP)/system/core/include
 
 include $(BUILD_EXECUTABLE)
 

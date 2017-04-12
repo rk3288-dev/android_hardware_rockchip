@@ -36,7 +36,7 @@
 
 #include <linux/ion.h>
 #include <ion/ion.h>
-#include <linux/rockchip_ion.h>
+#include <ion/rockchip_ion.h>
 
 /*---------------------------------------------------------------------------*/
 

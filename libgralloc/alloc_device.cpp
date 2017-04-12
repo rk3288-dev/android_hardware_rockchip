@@ -36,6 +36,8 @@
 #include <cutils/properties.h>
 #include <stdlib.h>
 
+#include <system/graphics_extended.h>
+
 
 //zxl:for vpu info
 #include "../librkvpu/vpu_global.h"

@@ -19,7 +19,6 @@
 #include <sys/stat.h>
 #include <linux/ion.h>
 #include <ion/ion.h>
-#include <linux/rockchip_ion.h>
 #include <string.h>
 #include <string>
 #include <vector>
@@ -69,7 +68,7 @@ typedef struct _vopDisplay {
     float ydpi;
 }vopDisplay;
 /*
-@node :The area node was belong to eg,0 is equal to "sys/class/graphics/fb0" 
+@node :The area node was belong to eg,0 is equal to "sys/class/graphics/fb0"
 @fbFd :fbFd is equal to open(sys/class/graphics/fb0,mode)
 @width,height,xstride,ystride:Follow the win and belong to lcd which is connect to vop
 @scale:The property of the area eg,scale down
@@ -106,7 +105,7 @@ typedef struct _vopWinArea {
 */
 typedef struct _vopWin {
     u8 winIndex;
-    
+
     int winFd;
     int areaNums;
 
@@ -118,7 +117,7 @@ typedef struct _vopWin {
 }vopWin;
 
 /*
-@vopFeature :The property of vop.The property can be 
+@vopFeature :The property of vop.The property can be
 	SUPPORT_VOP_IDENTIFY	= BIT(0),
 	SUPPORT_IFBDC		    = BIT(1),
 	SUPPORT_AFBDC		    = BIT(2),

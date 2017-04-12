@@ -47,10 +47,6 @@ LOCAL_C_INCLUDES := \
 LOCAL_C_INCLUDES += hardware/rockchip/include
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc/ump/include
 
-LOCAL_C_INCLUDES += \
-	system/core/libion/include \
-	system/core/libion/kernel-headers
-
 ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 5.0)))
        LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump \
        hardware/rk29/libon2

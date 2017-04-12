@@ -71,7 +71,7 @@ GRALLOC_FB_SWAP_RED_BLUE ?= 1
 MALI_DDK_INCLUDES := $(MALI_LOCAL_PATH)/include $(MALI_LOCAL_PATH)/src/ump/include
 LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR_SHARED_LIBRARIES)/hw
 ifeq ($(MALI_ION), 1)
-ALLOCATION_LIB := libion
+ALLOCATION_LIB := libion libion.rockchip
 ALLOCATOR_SPECIFIC_FILES := alloc_ion.cpp gralloc_module_ion.cpp
 else # MALI_ION
 ALLOCATION_LIB := libUMP
@@ -85,7 +85,7 @@ GRALLOC_FB_SWAP_RED_BLUE?=0
 MALI_DDK_INCLUDES := $(MALI_LOCAL_PATH)/include $(MALI_LOCAL_PATH)/kernel/include
 LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR_SHARED_LIBRARIES)/hw
 ifeq ($(MALI_ION), 1)
-ALLOCATION_LIB := libion
+ALLOCATION_LIB := libion libion.rockchip
 ALLOCATOR_SPECIFIC_FILES := alloc_ion.cpp gralloc_module_ion.cpp
 else # MALI_ION
 ALLOCATION_LIB := libGLES_mali
@@ -166,9 +166,7 @@ LOCAL_C_INCLUDES := \
     $(MALI_DDK_INCLUDES)
 
 LOCAL_C_INCLUDES += \
-    system/core/include \
-    system/core/libion/include \
-    system/core/libion/kernel-headers
+    system/core/include
 
 LOCAL_CFLAGS += \
     -DLOG_TAG=\"gralloc\" \
@@ -196,13 +194,6 @@ endif # GRALLOC_DISP_H
 ifdef MALI_DISPLAY_VERSION
 LOCAL_CFLAGS += -DMALI_DISPLAY_VERSION=$(MALI_DISPLAY_VERSION)
 endif # MALI_DISPLAY_VERSION
-
-ifeq ($(wildcard system/core/libion/include/ion/ion.h),)
-LOCAL_C_INCLUDES += system/core/include
-LOCAL_CFLAGS += -DGRALLOC_OLD_ION_API
-else
-LOCAL_C_INCLUDES += system/core/libion/include
-endif
 
 ifeq ($(GRALLOC_FB_SWAP_RED_BLUE),1)
 LOCAL_CFLAGS += -DGRALLOC_FB_SWAP_RED_BLUE
@@ -249,7 +240,7 @@ LOCAL_SRC_FILES := \
     $(AFBC_FILES) \
     gralloc_vsync_${GRALLOC_VSYNC_BACKEND}.cpp
 
-LOCAL_C_INCLUDES := hardware/rockchip/include
+LOCAL_C_INCLUDES += hardware/rockchip/include
 
 ifeq ($(strip $(BOARD_USE_AFBC_LAYER)),true)
 LOCAL_CFLAGS += -DUSE_AFBC_LAYER

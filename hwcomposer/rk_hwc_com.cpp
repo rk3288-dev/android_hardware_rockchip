@@ -19,6 +19,7 @@
 #include <ui/PixelFormat.h>
 #include <fcntl.h>
 
+#include <system/graphics_extended.h>
 
 
 
@@ -36,13 +37,13 @@ hwcSTATUS
 hwcGetFormat(
     IN  struct private_handle_t * Handle,
     OUT RgaSURF_FORMAT * Format
-    
+
     )
 {
     struct private_handle_t *handle = Handle;
     if (Format != NULL)
     {
-    	
+
         switch (GPU_FORMAT)
         {
         case HAL_PIXEL_FORMAT_RGB_565:
@@ -70,7 +71,7 @@ hwcGetFormat(
             break;
 		case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
 		   *Format = RK_FORMAT_YCbCr_420_SP;
-			 break; 
+			 break;
         default:
             return hwcSTATUS_INVALID_ARGUMENT;
         }
