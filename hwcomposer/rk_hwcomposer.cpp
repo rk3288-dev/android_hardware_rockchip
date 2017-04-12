@@ -59,7 +59,6 @@ static hwbkupmanage bkupmanage;
 static int bootanimFinish = 0;
 #endif
 
-static PFNEGLRENDERBUFFERMODIFYEDANDROIDPROC _eglRenderBufferModifiedANDROID;
 int gwin_tab[MaxZones] = {win0,win1,win2_0,win2_1,win2_2,win2_3,win3_0,win3_1,win3_2,win3_3};
 
 
@@ -10473,7 +10472,6 @@ static int hwc_set_lcdc(hwcContext * context, hwc_display_contents_1_t *list,int
             hwc_surface_t surf = NULL;
             dpy = eglGetCurrentDisplay();
             surf = eglGetCurrentSurface(EGL_DRAW);
-            _eglRenderBufferModifiedANDROID((EGLDisplay) dpy, (EGLSurface) surf);
             eglSwapBuffers((EGLDisplay) dpy, (EGLSurface) surf);
         }
 #endif
@@ -11137,7 +11135,6 @@ static int hwc_set_screen(hwc_composer_device_1 *dev, hwc_display_contents_1_t *
         int skipcnt = atoi(value);
         if(skipcnt > 0) {
             if(((++frame_cnt)%skipcnt) == 0) {
-                _eglRenderBufferModifiedANDROID((EGLDisplay) NULL, (EGLSurface) NULL);
                 eglSwapBuffers((EGLDisplay) NULL, (EGLSurface) NULL);
             }
         } else {
@@ -12445,17 +12442,6 @@ hwc_device_open(
     {
         property_set("sys.display.oritation","2");
     }
-    _eglRenderBufferModifiedANDROID = (PFNEGLRENDERBUFFERMODIFYEDANDROIDPROC)
-                                    eglGetProcAddress("eglRenderBufferModifiedANDROID");
-
-    if(_eglRenderBufferModifiedANDROID == NULL)
-    {
-        LOGE("EGL_ANDROID_buffer_modifyed extension "
-             "Not Found for hwcomposer");
-
-        hwcONERROR(hwcTHREAD_ERR);
-    }
-
 
 #if USE_HW_VSYNC
 
