@@ -42,7 +42,6 @@
 #define SYNC_IN_VIDEO                   0
 #define USE_HWC_FENCE                   1
 #define USE_VIDEO_BACK_BUFFERS          1
-#define USE_SPECIAL_COMPOSER            0
 #define ENABLE_LCDC_IN_NV12_TRANSFORM   1           //1: It will need reserve a phyical memory for transform.
 #define USE_HW_VSYNC                    1
 #define WRITE_VPU_FRAME_DATA            0
@@ -218,7 +217,7 @@ enum
     HWC_BLITTER = 100,
     HWC_DIM,
     HWC_CLEAR_HOLE
-    
+
 };
 
 enum
@@ -293,10 +292,10 @@ typedef enum _hwc_lcdc_res
 {
 	win0				= 1,
 	win1                = 2,
-	win2_0              = 3,   
+	win2_0              = 3,
 	win2_1              = 4,
 	win2_2              = 5,
-	win2_3              = 6,   
+	win2_3              = 6,
 	win3_0              = 7,
 	win3_1              = 8,
 	win3_2              = 9,
@@ -313,7 +312,7 @@ typedef struct _ZoneInfo
     unsigned int        height;
     hwc_rect_t  src_rect;
     hwc_rect_t  disp_rect;
-    struct private_handle_t *handle;      
+    struct private_handle_t *handle;
 	int         layer_fd;
 	int         direct_fd;
 	unsigned int addr;
@@ -346,7 +345,7 @@ typedef struct _ZoneInfo
 	int         overlayPixels;
 	int         skipLayer;
     unsigned int zoneCrc;
-	char        LayerName[LayerNameLength + 1];   
+	char        LayerName[LayerNameLength + 1];
 #ifdef USE_HWC_FENCE
     int*        pRelFenceFd;
     int         acq_fence_fd;
@@ -381,9 +380,9 @@ ZoneManager;
 typedef struct _vop_info
 {
     int         state;   // 1:on ,0:off
-	int         zone_num;  // nums    
+	int         zone_num;  // nums
 	int         reserve;
-	int         reserve2;	
+	int         reserve2;
 }
 vop_info;
 typedef struct _BpVopInfo
@@ -415,18 +414,18 @@ hwbkupinfo;
 typedef struct _hwbkupmanage
 {
     int count;
-    buffer_handle_t phd_drt;    
+    buffer_handle_t phd_drt;
     int          direct_fd;
     int          direct_base;
     unsigned int direct_addr;
-    void* direct_addr_log;    
+    void* direct_addr_log;
     int invalid;
     int needrev;
     int dstwinNo;
     int skipcnt;
-    unsigned int ckpstcnt;    
-    unsigned int inputspcnt;    
-	char LayerName[LayerNameLength + 1];    
+    unsigned int ckpstcnt;
+    unsigned int inputspcnt;
+	char LayerName[LayerNameLength + 1];
     unsigned int crrent_dis_fd;
     hwbkupinfo bkupinfo[bakupbufsize];
     struct private_handle_t *handle_bk;
@@ -499,7 +498,7 @@ struct hwc_fb_info
     char LayerName[RK_MAX_BUF_NUM][LayerNameLength + 1];
 };
 
-typedef struct 
+typedef struct
 {
    tVPU_FRAME_v2 vpu_frame;
    void*      vpu_handle;
@@ -870,7 +869,7 @@ extern "C" int clock_nanosleep(clockid_t clock_id, int flags,
 }
 #endif
 
-#endif 
+#endif
 
 /******************************************************************************\
  ********************************* Blitters ***********************************

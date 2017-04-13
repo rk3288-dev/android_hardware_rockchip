@@ -4,6 +4,8 @@
 #define RK_WIN_MAX_AREA         4
 #define RK_MAX_BUF_NUM          11
 
+#define RK_FBIOSET_CONFIG_DONE 0x4628
+
 #define u32 unsigned int
 #define u8  unsigned char
 #define u16 unsigned short
