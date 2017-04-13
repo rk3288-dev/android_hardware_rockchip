@@ -41,6 +41,13 @@
 
 #include <sys/mman.h>
 
+#define HWC_TOWIN0  1001
+#define HWC_TOWIN1  1002
+#define HWC_LCDC    1003
+#define HWC_NODRAW  1004
+#define HWC_MIX     1005
+#define HWC_MIX_V2  1006
+
 //primary,hotplug and virtual device context
 static hwcContext * _contextAnchor = NULL;
 static hwcContext * _contextAnchor1 = NULL;
