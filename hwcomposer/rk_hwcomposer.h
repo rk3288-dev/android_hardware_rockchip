@@ -345,7 +345,6 @@ typedef struct _ZoneInfo
 	int         overlayPixels;
 	int         skipLayer;
     unsigned int zoneCrc;
-	char        LayerName[LayerNameLength + 1];
 #ifdef USE_HWC_FENCE
     int*        pRelFenceFd;
     int         acq_fence_fd;
@@ -425,7 +424,6 @@ typedef struct _hwbkupmanage
     int skipcnt;
     unsigned int ckpstcnt;
     unsigned int inputspcnt;
-	char LayerName[LayerNameLength + 1];
     unsigned int crrent_dis_fd;
     hwbkupinfo bkupinfo[bakupbufsize];
     struct private_handle_t *handle_bk;
@@ -495,7 +493,6 @@ struct hwc_fb_info
 {
     int* pRelFenceFd[RK_MAX_BUF_NUM];
     struct rk_fb_win_cfg_data fb_info;
-    char LayerName[RK_MAX_BUF_NUM][LayerNameLength + 1];
 };
 
 typedef struct

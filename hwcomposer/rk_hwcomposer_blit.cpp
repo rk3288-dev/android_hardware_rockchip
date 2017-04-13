@@ -529,8 +529,6 @@ hwcBlit(
     /* Get plane alpha. */
     planeAlpha = Src->blending >> 16;
 
-     //  LOGD(" planeAlpha=%x,Src->blending=%x,name=%s", planeAlpha, Src->blending,Src->LayerName);
-
     if(index > 0)    // bottom layer donnt need alpah
     {
         /* Setup blending. */
@@ -639,11 +637,10 @@ hwcBlit(
     }
 
 
-    LOGV("%s(%d):,SRCname=%s,VirSrcRect=[%d,%d,%d,%d] => VirDstRect=[%d,%d,%d,%d] "
+    LOGV("%s(%d):,VirSrcRect=[%d,%d,%d,%d] => VirDstRect=[%d,%d,%d,%d] "
          "stretch=%d hfactor=%f vfactor=%f",
          __FUNCTION__,
          __LINE__,
-         Src->LayerName,
          srcRect.left,
          srcRect.top,
          srcRect.right,
@@ -673,22 +670,11 @@ hwcBlit(
              * NOTE: Now we always set dstRect to clip area. */
 
             /* Intersect clip with dest. */
-            if(Src->dospecialflag)
-            {
-                dstRects[m].left   = dstRect.left;
-                dstRects[m].top    = dstRect.top;
-                dstRects[m].right  = dstRect.right;
-                dstRects[m].bottom = dstRect.bottom;
-                ALOGD("@spicial [%d,%d,%d,%d]",dstRects[m].left,dstRects[m].top,dstRects[m].right,dstRects[m].bottom);
-            }
-            else
-            {
-                dstRects[m].left   = hwcMAX(dstRect.left,   rects[n].left);
-                dstRects[m].top    = hwcMAX(dstRect.top,    rects[n].top);
-                dstRects[m].right  = hwcMIN(dstRect.right,  rects[n].right);
-                dstRects[m].right  = hwcMIN(dstRects[m].right,(signed int)(dstWidth));
-                dstRects[m].bottom = hwcMIN(dstRect.bottom, rects[n].bottom);
-            }
+            dstRects[m].left   = hwcMAX(dstRect.left,   rects[n].left);
+            dstRects[m].top    = hwcMAX(dstRect.top,    rects[n].top);
+            dstRects[m].right  = hwcMIN(dstRect.right,  rects[n].right);
+            dstRects[m].right  = hwcMIN(dstRects[m].right,(signed int)(dstWidth));
+            dstRects[m].bottom = hwcMIN(dstRect.bottom, rects[n].bottom);
             if (dstRects[m].top < 0) // @ buyudaren grame dstRects[m].top < 0,bottom is height ,so do this
             {
                 dstRects[m].top = dstRects[m].top + dstHeight;
@@ -731,10 +717,6 @@ hwcBlit(
 
             /* Advance to next rectangle. */
             m++;
-            if(Src->dospecialflag)
-            {
-                 n = (unsigned int) Region->numRects;
-            }
         }
 
         /* Try next group if no rects. */
@@ -940,53 +922,10 @@ hwcBlit(
                 Rga_Request.mmu_info.mmu_flag |= (1 << 31) | (DstHandle->type << 10) | (srchnd->type << 8);
 				ALOGV("rga_flag=%x",Rga_Request.mmu_info.mmu_flag);
             }
-/*
-            if(FceMrga->use_fence)
-            {
-                //RGA_set_src_fence_flag(&Rga_Request,Src->acquireFenceFd,true);
-                RGA_set_src_fence_flag(&Rga_Request,0,false);
-                ALOGV("set src_fd=%d,name=%s,is_last=%d",Src->acquireFenceFd,Src->LayerName,FceMrga->is_last);
-                // ALOGD("[%d,%d,%d,%d]",n,Region->numRects,i,m);
-                if((n >= (unsigned int) Region->numRects)
-                    && (i== m-1))
-                {
-                    ALOGV("set dstoutfence flag=true");
-                    RGA_set_dst_fence_flag(&Rga_Request,true);
-                }
-            }
-            #if VIDEO_USE_PPROT
-            if(!hwcppCheck(&Rga_Request,Context->composer_mode,yuvFormat,Src->transform, \
-                &srcRects[i],&dstRects[i]) && !Context->wfddev)
-            {
-                Context->Is_bypp = true;
-                Rga_Request.src.x_offset = srcRect.left;
-                Rga_Request.src.y_offset = srcRect.top;
-                retv = hwcDobypp(&Rga_Request,dstRects[i].left, dstRects[i].top,Src->transform);
-                //memset((void*)(Context->membk_base[Context->membk_index]),0x80,1280*800*2);
-                if( retv != 0)
-                {
-                    LOGE("%s: Adjust ActSrcRect[%d]=[%d,%d,%d,%d] => ActDstRect=[%d,%d,%d,%d]",
-                         Src->LayerName,
-                         i,
-                         srcRects[i].left,
-                         srcRects[i].top,
-                         srcRects[i].right,
-                         srcRects[i].bottom,
-                         dstRects[i].left,
-                         dstRects[i].top,
-                         dstRects[i].right,
-                         dstRects[i].bottom
-                        );
 
-                }
-                return hwcSTATUS_OK;
-            }
-            #endif
-*/
             retv = ioctl(Context->engine_fd, RGA_BLIT_ASYNC, &Rga_Request);
             if( retv != 0)
             {
-                LOGE("RGA ASYNC err=%d,name=%s",retv, Src->LayerName);
                 LOGE("%s(%d)[i=%d]:  RGA_BLIT_ASYNC Failed Region->numRects=%d ,n=%d,m=%d", __FUNCTION__, __LINE__, i, Region->numRects, n, m);
                 LOGE("RGA src:fd=%d,base=%p,src_vir_w = %d, src_vir_h = %d,srcLogical=%x,srcFormat=%d", srchnd->share_fd, srchnd->base, \
                      srcStride, srcHeight, srcLogical, srcFormat);
@@ -1060,10 +999,6 @@ hwcBlit(
 
 OnError:
     LOGE("%s(%d):  Failed", __FUNCTION__, __LINE__);
-#ifdef HWC_Layer_DEBUG
-    LOGE("composer err in layer=%s,rect.left=%d,rect.top=%d,rect.right=%d,rect.bottom=%d",
-         Src->LayerName, Src->sourceCrop.left, Src->sourceCrop.top, Src->sourceCrop.right, Src->sourceCrop.bottom);
-#endif
     /* Error roll back. */
 
     /* Unlock buffer. */
