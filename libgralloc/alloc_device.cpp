@@ -930,18 +930,6 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 	bool alloc_for_extended_yuv = false, alloc_for_arm_afbc_yuv = false;
 	int internalWidth,internalHeight;
 
-#if defined(GRALLOC_FB_SWAP_RED_BLUE)
-	/* match the framebuffer format */
-	if (usage & GRALLOC_USAGE_HW_FB)
-	{
-#ifdef GRALLOC_16_BITS
-		format = HAL_PIXEL_FORMAT_RGB_565;
-#else
-		format = HAL_PIXEL_FORMAT_BGRA_8888;
-#endif
-	}
-#endif
-
 	if(format == HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED  )
 	{
 		if(usage & GRALLOC_USAGE_HW_VIDEO_ENCODER )
@@ -973,11 +961,6 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
     if ( MAGIC_USAGE_TO_USE_AFBC_LAYER == (usage & MAGIC_USAGE_TO_USE_AFBC_LAYER) ) {
         internal_format = GRALLOC_ARM_INTFMT_AFBC | GRALLOC_ARM_HAL_FORMAT_INDEXED_RGBA_8888;
         W("use_afbc_layer: force to set 'internal_format' to 0x%llx for usage '0x%x'.", internal_format, usage);
-    }
-
-    if (usage & GRALLOC_USAGE_HW_FB) {
-        internal_format = GRALLOC_ARM_INTFMT_AFBC | GRALLOC_ARM_HAL_FORMAT_INDEXED_RGBA_8888;
-        W("use_afbc_layer: force to set 'internal_format' to 0x%llx for buffer_for_fb_target_layer.");
     }
 #endif
 
@@ -1179,46 +1162,11 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 
 	int err;
 
-	if (usage & GRALLOC_USAGE_HW_FB)
-	{
-#ifdef USE_AFBC_LAYER
-		err = alloc_backend_alloc(dev, size, usage, pHandle, internal_format, w, h);
-        /**
-         * .trick : vop_of_3399 无法处理 有 offset 的 buffer_of_afbc_layer, 否则会触发异常中断 post_buf_empty_intr.
-         *          而从 'framebuffer' 获取的 buffer 会带有 offset 属性, 将有问题.
-         *          所以这里从 ion 分配无 offset 的 buffer.
-         */
-#else
-		err = gralloc_alloc_framebuffer(dev, size, usage, pHandle, &pixel_stride, &byte_stride);
-#endif
-	}
-	/*
-	else if(usage & 0x08000000)
-	{
-		 ALOGD("---------------------%x",usage);
-		 err = alloc_from_backbuffer(dev, size, usage, pHandle, internal_format, w, h);
-	}*/
-	else
-	{
-		err = alloc_backend_alloc(dev, size, usage, pHandle, internal_format, w, h);
-	}
-
+	err = alloc_backend_alloc(dev, size, usage, pHandle, internal_format, w, h);
 	if (err < 0)
 	{
 		return err;
 	}
-
-#if (1 == MALI_ARCHITECTURE_UTGARD)
-	/* match the framebuffer format */
-	if (usage & GRALLOC_USAGE_HW_FB)
-	{
-#ifdef GRALLOC_16_BITS
-		format = HAL_PIXEL_FORMAT_RGB_565;
-#else
-		format = HAL_PIXEL_FORMAT_RGBA_8888;
-#endif
-	}
-#endif
 
 	private_handle_t *hnd = (private_handle_t *)*pHandle;
 
@@ -1228,19 +1176,8 @@ static int alloc_device_alloc(alloc_device_t* dev, int w, int h, int format, int
 	if( err < 0 )
 	{
 		private_module_t* m = reinterpret_cast<private_module_t*>(dev->common.module);
-
-		if ( (usage & GRALLOC_USAGE_HW_FB) )
-		{
-			/*
-			 * Having the attribute region is not critical for the framebuffer so let it pass.
-			 */
-			err = 0;
-		}
-		else
-		{
-			alloc_backend_alloc_free( hnd, m );
-			return err;
-		}
+		alloc_backend_alloc_free( hnd, m );
+		return err;
 	}
 #endif
 
