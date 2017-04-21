@@ -10422,20 +10422,7 @@ void handle_hotplug_event(int hdmi_mode ,int flag )
             hotplug_set_frame(context,0);
         }
 
-        char value[PROPERTY_VALUE_MAX];
-        property_set("sys.hwc.htg","hotplug");
         context->procs->hotplug(context->procs, HWC_DISPLAY_EXTERNAL, 1);
-        property_get("sys.hwc.htg",value,"hotplug");
-        int count = 0;
-        while(strcmp(value,"true")){
-            count ++;
-            if(count%3==0){
-                context->procs->hotplug(context->procs, HWC_DISPLAY_EXTERNAL, 0);
-            }
-            context->procs->hotplug(context->procs, HWC_DISPLAY_EXTERNAL, 1);
-            property_get("sys.hwc.htg",value,"hotplug");
-            ALOGI("Trying to hotplug device[%d,%d,%d]",__LINE__,hdmi_mode,flag);
-        }
         ALOGI("connet to hotplug device [%d,%d,%d]",__LINE__,hdmi_mode,flag);
 #if HTGFORCEREFRESH
         pthread_mutex_lock(&context->mRefresh.mlk);
