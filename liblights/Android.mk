@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+ifneq ($(TARGET_PROVIDES_LIBLIGHT),true)
 
 LOCAL_PATH := $(call my-dir)
 
@@ -35,3 +36,5 @@ LOCAL_MODULE := lights.$(TARGET_BOARD_PLATFORM)
 LOCAL_MODULE_TAGS := optional
 LOCAL_CFLAGS:=-DPLATFORM_SDK_VERSION=$(PLATFORM_SDK_VERSION)
 include $(BUILD_SHARED_LIBRARY)
+
+endif # ! TARGET_PROVIDES_LIBLIGHT
